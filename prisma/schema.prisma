@@ -172,12 +172,15 @@ model Course {
   id                   String        @id @default(uuid())
   slug                 String        @unique
   price                Int
-  promoPrice           Int?
-  promoStartAt         DateTime?
-  promoEndAt           DateTime?
+  /// Prix barré optionnel affiché à côté du prix courant (pas de fenêtre temporelle : simple
+  /// effet de valorisation, cf. Course.compareAtPriceXof côté frontend).
+  compareAtPrice       Int?
   status               ContentStatus @default(DRAFT)
   coverImageUrl        String?
   level                CourseLevel   @default(BEGINNER)
+  /// Dénormalisé : source de vérité pour l'affichage des cards, indépendant du nombre réel de
+  /// leçons dans `modules` (qui peut être vide pour un cours pas encore détaillé).
+  lessonCount          Int           @default(0)
   totalDurationSeconds Int           @default(0)
   isFeatured           Boolean       @default(false)
   hasCertificate       Boolean       @default(false)
@@ -194,13 +197,19 @@ model Course {
   @@map("courses")
 }
 
+/// Les 6 champs traduisibles d'une formation, alignés sur Course de src/lib/types.ts
+/// (frontend) : title/subtitle/cardDescription sont toujours renseignés, heroTagline* est
+/// optionnel (seules les formations avec un écran détail développé en ont besoin).
 model CourseTranslation {
-  id               String @id @default(uuid())
-  courseId         String
-  locale           Locale
-  title            String
-  shortDescription String
-  description      String
+  id                String  @id @default(uuid())
+  courseId          String
+  locale            Locale
+  title             String
+  subtitle          String
+  cardDescription   String
+  heroTagline       String?
+  heroTaglineMobile String?
+  description       String
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
@@ -268,6 +277,7 @@ model SubmoduleTranslation {
 
 model Lesson {
   id            String        @id @default(uuid())
+  slug          String        @unique
   submoduleId   String
   position      Int
   status        ContentStatus @default(DRAFT)
@@ -319,14 +329,28 @@ model Video {
 model Resource {
   id        String   @id @default(uuid())
   lessonId  String
-  label     String
-  fileUrl   String
+  url       String
+  sizeKb    Int
   createdAt DateTime @default(now())
 
-  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson       Lesson                @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  translations ResourceTranslation[]
 
   @@index([lessonId])
   @@map("resources")
+}
+
+model ResourceTranslation {
+  id          String @id @default(uuid())
+  resourceId  String
+  locale      Locale
+  title       String
+  description String
+
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceId, locale])
+  @@map("resource_translations")
 }
 
 // ============================================================

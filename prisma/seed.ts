@@ -128,7 +128,9 @@ async function main() {
       id: 'c-rectification-fatiha',
       slug: 'rectification-fatiha',
       price: 15000,
+      compareAtPrice: 20000,
       level: 'BEGINNER' as const,
+      lessonCount: 11,
       totalDurationSeconds: 10800,
       isFeatured: true,
       hasCertificate: true,
@@ -136,19 +138,33 @@ async function main() {
       translations: {
         fr: {
           title: 'Rectification de la Fatiha',
-          shortDescription: 'Onze leçons pour réciter juste',
+          subtitle: 'Onze leçons pour réciter juste',
+          cardDescription:
+            'Lettre par lettre, corrigez la sourate que vous récitez dix-sept fois par jour.',
+          heroTagline:
+            'Vous la récitez dix-sept fois par jour. Onze leçons pour la réciter juste : chaque lettre, chaque prolongation, chaque arrêt — avec correction personnalisée de votre récitation.',
+          heroTaglineMobile:
+            'Vous la récitez dix-sept fois par jour. Onze leçons pour la réciter juste.',
           description:
             "La Fatiha est la seule sourate obligatoire à chaque unité de prière. Une lettre mal prononcée peut changer le sens du verset — et pourtant, la plupart des fidèles n'ont jamais eu de correction individuelle depuis l'enfance.\n\nCette formation reprend la sourate verset par verset. Vous enregistrez votre récitation à la fin de chaque module, et recevez une correction vocale sous 48 heures.",
         },
         en: {
           title: 'Perfecting Al-Fatiha',
-          shortDescription: 'Eleven lessons to recite it right',
+          subtitle: 'Eleven lessons to recite it right',
+          cardDescription: 'Letter by letter, correct the surah you recite seventeen times a day.',
+          heroTagline:
+            'You recite it seventeen times a day. Eleven lessons to recite it right: every letter, every prolongation, every stop — with personalized correction of your recitation.',
+          heroTaglineMobile: 'You recite it seventeen times a day. Eleven lessons to recite it right.',
           description:
             'Al-Fatiha is the only surah obligatory in every unit of prayer. A mispronounced letter can change the meaning of a verse — yet most worshippers have never had individual correction since childhood.',
         },
         ar: {
           title: 'تصحيح سورة الفاتحة',
-          shortDescription: 'أحد عشر درسًا للتلاوة الصحيحة',
+          subtitle: 'أحد عشر درسًا للتلاوة الصحيحة',
+          cardDescription: 'حرفًا حرفًا، صحّح السورة التي تتلوها سبع عشرة مرة يوميًا.',
+          heroTagline:
+            'تتلوها سبع عشرة مرة يوميًا. أحد عشر درسًا لتلاوتها بشكل صحيح: كل حرف، كل مدّ، كل وقفة — مع تصحيح شخصي لتلاوتك.',
+          heroTaglineMobile: 'تتلوها سبع عشرة مرة يوميًا. أحد عشر درسًا لتلاوتها بشكل صحيح.',
           description:
             'سورة الفاتحة هي السورة الوحيدة الواجبة في كل ركعة. قد يغيّر حرف يُنطق خطأً معنى الآية.',
         },
@@ -158,7 +174,9 @@ async function main() {
       id: 'c-initiation-nourania',
       slug: 'initiation-nourania',
       price: 25000,
+      compareAtPrice: null,
       level: 'BEGINNER' as const,
+      lessonCount: 14,
       totalDurationSeconds: 22800,
       isFeatured: true,
       hasCertificate: true,
@@ -166,19 +184,28 @@ async function main() {
       translations: {
         fr: {
           title: 'Initiation à la lecture — Nourania',
-          shortDescription: 'Les bases de la lecture coranique',
+          subtitle: 'Les bases de la lecture coranique',
+          cardDescription: "De l'alphabet à la lecture fluide, sans passer par la translittération.",
+          heroTagline: null,
+          heroTaglineMobile: null,
           description:
             "La méthode Nourania pour apprendre à lire l'arabe coranique lettre par lettre, sans prérequis.",
         },
         en: {
           title: 'Reading Foundations — Nourania',
-          shortDescription: 'The foundations of Quranic reading',
+          subtitle: 'The foundations of Quranic reading',
+          cardDescription: 'From the alphabet to fluent reading, without going through transliteration.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description:
             'The Nourania method to learn Quranic Arabic reading letter by letter, with no prerequisites.',
         },
         ar: {
           title: 'القاعدة النورانية',
-          shortDescription: 'أساسيات القراءة القرآنية',
+          subtitle: 'أساسيات القراءة القرآنية',
+          cardDescription: 'من الحروف الأبجدية إلى القراءة الطليقة، دون المرور بالنقحرة.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description: 'منهج نوراني لتعلم قراءة العربية القرآنية حرفًا حرفًا، دون شروط مسبقة.',
         },
       },
@@ -187,7 +214,9 @@ async function main() {
       id: 'c-regles-tajwid',
       slug: 'regles-tajwid',
       price: 40000,
+      compareAtPrice: null,
       level: 'INTERMEDIATE' as const,
+      lessonCount: 22,
       totalDurationSeconds: 39900,
       isFeatured: true,
       hasCertificate: true,
@@ -195,19 +224,28 @@ async function main() {
       translations: {
         fr: {
           title: 'Les règles du Tajwid',
-          shortDescription: 'Réciter le Coran selon ses règles',
+          subtitle: 'Réciter le Coran selon ses règles',
+          cardDescription: 'Les vingt-deux règles de récitation, du souffle aux lettres emphatiques.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description:
             "Un parcours complet des règles de Tajwid, de la théorie à l'application pratique guidée.",
         },
         en: {
           title: 'The Rules of Tajwid',
-          shortDescription: 'Reciting the Quran by its rules',
+          subtitle: 'Reciting the Quran by its rules',
+          cardDescription: 'The twenty-two rules of recitation, from breath to emphatic letters.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description:
             'A complete path through the rules of Tajwid, from theory to guided practical application.',
         },
         ar: {
           title: 'أحكام التجويد',
-          shortDescription: 'تلاوة القرآن وفق أحكامه',
+          subtitle: 'تلاوة القرآن وفق أحكامه',
+          cardDescription: 'أحكام التلاوة الاثنان والعشرون، من النفَس إلى الحروف المفخّمة.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description: 'مسار كامل في أحكام التجويد، من النظرية إلى التطبيق العملي الموجّه.',
         },
       },
@@ -216,7 +254,9 @@ async function main() {
       id: 'c-fiqh-priere',
       slug: 'fiqh-priere',
       price: 20000,
+      compareAtPrice: null,
       level: 'BEGINNER' as const,
+      lessonCount: 12,
       totalDurationSeconds: 16200,
       isFeatured: false,
       hasCertificate: true,
@@ -224,17 +264,26 @@ async function main() {
       translations: {
         fr: {
           title: 'Fiqh de la prière',
-          shortDescription: 'Comprendre et accomplir la prière',
+          subtitle: 'Comprendre et accomplir la prière',
+          cardDescription: 'Les piliers, les conditions et les oublis : prier avec certitude.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description: 'Les règles de la prière, ses conditions, ses piliers et ses cas particuliers.',
         },
         en: {
           title: 'Fiqh of Prayer',
-          shortDescription: 'Understanding and performing prayer',
+          subtitle: 'Understanding and performing prayer',
+          cardDescription: 'The pillars, conditions and omissions: praying with certainty.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description: 'The rules of prayer, its conditions, pillars, and special cases.',
         },
         ar: {
           title: 'فقه الصلاة',
-          shortDescription: 'فهم الصلاة وأداؤها',
+          subtitle: 'فهم الصلاة وأداؤها',
+          cardDescription: 'الأركان والشروط والسهو: الصلاة بيقين.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description: 'أحكام الصلاة وشروطها وأركانها وحالاتها الخاصة.',
         },
       },
@@ -243,7 +292,9 @@ async function main() {
       id: 'c-memorisation-cinq-lignes',
       slug: 'memorisation-cinq-lignes',
       price: 30000,
+      compareAtPrice: null,
       level: 'INTERMEDIATE' as const,
+      lessonCount: 16,
       totalDurationSeconds: 25800,
       isFeatured: false,
       hasCertificate: true,
@@ -251,18 +302,28 @@ async function main() {
       translations: {
         fr: {
           title: 'Mémorisation — cinq lignes par jour',
-          shortDescription: 'Une méthode progressive de mémorisation',
+          subtitle: 'Une méthode progressive de mémorisation',
+          cardDescription:
+            'Une méthode de mémorisation tenable, cinq lignes par jour, révisions comprises.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description:
             'Mémoriser durablement le Coran à raison de cinq lignes par jour, avec révision guidée.',
         },
         en: {
           title: 'Memorization — five lines a day',
-          shortDescription: 'A progressive memorization method',
+          subtitle: 'A progressive memorization method',
+          cardDescription: 'A sustainable memorization method, five lines a day, revisions included.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description: 'Durably memorize the Quran at a pace of five lines a day, with guided revision.',
         },
         ar: {
           title: 'الحفظ : خمسة أسطر يوميًا',
-          shortDescription: 'منهج تدريجي للحفظ',
+          subtitle: 'منهج تدريجي للحفظ',
+          cardDescription: 'منهج حفظ يمكن الاستمرار عليه، خمسة أسطر يوميًا، مع المراجعات.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description: 'حفظ القرآن حفظًا راسخًا بمعدل خمسة أسطر يوميًا، مع مراجعة موجّهة.',
         },
       },
@@ -271,7 +332,9 @@ async function main() {
       id: 'c-sciences-hadith',
       slug: 'sciences-hadith',
       price: 45000,
+      compareAtPrice: null,
       level: 'ADVANCED' as const,
+      lessonCount: 18,
       totalDurationSeconds: 34800,
       isFeatured: false,
       hasCertificate: true,
@@ -279,18 +342,27 @@ async function main() {
       translations: {
         fr: {
           title: 'Sciences du hadith',
-          shortDescription: 'Introduction à la critique du hadith',
+          subtitle: 'Introduction à la critique du hadith',
+          cardDescription: 'Chaîne de transmission, authentification, terminologie des savants.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description:
             "Les fondements des sciences du hadith : authenticité, chaînes de transmission, classification.",
         },
         en: {
           title: 'Sciences of Hadith',
-          shortDescription: 'Introduction to hadith criticism',
+          subtitle: 'Introduction to hadith criticism',
+          cardDescription: 'Chain of transmission, authentication, scholarly terminology.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description: 'The foundations of hadith sciences: authenticity, chains of transmission, classification.',
         },
         ar: {
           title: 'علوم الحديث',
-          shortDescription: 'مدخل إلى علوم نقد الحديث',
+          subtitle: 'مدخل إلى علوم نقد الحديث',
+          cardDescription: 'سلسلة الإسناد، التوثيق، مصطلح العلماء.',
+          heroTagline: null,
+          heroTaglineMobile: null,
           description: 'أسس علوم الحديث : الصحة وسلاسل الإسناد والتصنيف.',
         },
       },
@@ -305,7 +377,9 @@ async function main() {
         id: c.id,
         slug: c.slug,
         price: c.price,
+        compareAtPrice: c.compareAtPrice,
         level: c.level,
+        lessonCount: c.lessonCount,
         totalDurationSeconds: c.totalDurationSeconds,
         isFeatured: c.isFeatured,
         hasCertificate: c.hasCertificate,
@@ -315,7 +389,10 @@ async function main() {
           create: (['fr', 'en', 'ar'] as const).map((locale) => ({
             locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
             title: c.translations[locale].title,
-            shortDescription: c.translations[locale].shortDescription,
+            subtitle: c.translations[locale].subtitle,
+            cardDescription: c.translations[locale].cardDescription,
+            heroTagline: c.translations[locale].heroTagline,
+            heroTaglineMobile: c.translations[locale].heroTaglineMobile,
             description: c.translations[locale].description,
           })),
         },
@@ -340,6 +417,7 @@ async function main() {
           lessons: [
             {
               id: 'l1',
+              slug: 'pourquoi-rectifier-la-fatiha',
               position: 1,
               isFreePreview: true,
               durationSeconds: 492,
@@ -351,6 +429,7 @@ async function main() {
             },
             {
               id: 'l2',
+              slug: 'poser-sa-respiration',
               position: 2,
               isFreePreview: true,
               durationSeconds: 700,
@@ -362,6 +441,7 @@ async function main() {
             },
             {
               id: 'l3',
+              slug: 'intention-posture-concentration',
               position: 3,
               isFreePreview: false,
               durationSeconds: 545,
@@ -391,6 +471,7 @@ async function main() {
           lessons: [
             {
               id: 'l4',
+              slug: 'le-sad-le-dad-et-la-machoire',
               position: 1,
               isFreePreview: false,
               durationSeconds: 980,
@@ -402,6 +483,7 @@ async function main() {
             },
             {
               id: 'l5',
+              slug: 'le-ta-et-le-za-distinguer-sans-forcer',
               position: 2,
               isFreePreview: false,
               durationSeconds: 895,
@@ -420,6 +502,7 @@ async function main() {
           lessons: [
             {
               id: 'l6',
+              slug: 'le-ayn-et-le-ha-ouvrir-la-gorge',
               position: 1,
               isFreePreview: false,
               durationSeconds: 1090,
@@ -429,13 +512,38 @@ async function main() {
                 ar: 'العين والحاء : فتح الحلق',
               },
               resources: [
-                { label: "Carte des points d'articulation", fileUrl: 'https://placeholder.mouslihacademy.sn/resources/carte-articulation.pdf' },
-                { label: 'Tableau des lettres gutturales', fileUrl: 'https://placeholder.mouslihacademy.sn/resources/tableau-gutturales.pdf' },
-                { label: 'Exercices de répétition — module 2', fileUrl: 'https://placeholder.mouslihacademy.sn/resources/exercices-module-2.pdf' },
+                {
+                  url: 'https://placeholder.mouslihacademy.sn/resources/carte-articulation.pdf',
+                  sizeKb: 420,
+                  translations: {
+                    fr: { title: "Carte des points d'articulation", description: 'Schéma annoté de la gorge et de la bouche' },
+                    en: { title: 'Map of articulation points', description: 'Annotated diagram of the throat and mouth' },
+                    ar: { title: 'خريطة مخارج الحروف', description: 'رسم توضيحي مشروح للحلق والفم' },
+                  },
+                },
+                {
+                  url: 'https://placeholder.mouslihacademy.sn/resources/tableau-gutturales.pdf',
+                  sizeKb: 180,
+                  translations: {
+                    fr: { title: 'Tableau des lettres gutturales', description: 'Les six lettres, leur sortie, les confusions courantes' },
+                    en: { title: 'Table of guttural letters', description: 'The six letters, their articulation point, common confusions' },
+                    ar: { title: 'جدول الحروف الحلقية', description: 'الحروف الستة، مخارجها، الأخطاء الشائعة' },
+                  },
+                },
+                {
+                  url: 'https://placeholder.mouslihacademy.sn/resources/exercices-module-2.pdf',
+                  sizeKb: 90,
+                  translations: {
+                    fr: { title: 'Exercices de répétition — module 2', description: 'À réciter puis enregistrer avant la leçon 7' },
+                    en: { title: 'Repetition exercises — module 2', description: 'To recite then record before lesson 7' },
+                    ar: { title: 'تمارين التكرار — الوحدة 2', description: 'تُتلى ثم تُسجَّل قبل الدرس 7' },
+                  },
+                },
               ],
             },
             {
               id: 'l7',
+              slug: 'le-qaf-et-le-kaf-le-point-dappui',
               position: 2,
               isFreePreview: false,
               durationSeconds: 1115,
@@ -465,6 +573,7 @@ async function main() {
           lessons: [
             {
               id: 'l8',
+              slug: 'compter-les-temps-de-prolongation',
               position: 1,
               isFreePreview: false,
               durationSeconds: 1185,
@@ -476,6 +585,7 @@ async function main() {
             },
             {
               id: 'l9',
+              slug: 'ou-sarreter-sans-briser-le-sens',
               position: 2,
               isFreePreview: false,
               durationSeconds: 1110,
@@ -505,6 +615,7 @@ async function main() {
           lessons: [
             {
               id: 'l10',
+              slug: 'recitation-guidee-verset-par-verset',
               position: 1,
               isFreePreview: false,
               durationSeconds: 1450,
@@ -516,6 +627,7 @@ async function main() {
             },
             {
               id: 'l11',
+              slug: 'enregistrer-et-envoyer-votre-recitation',
               position: 2,
               isFreePreview: false,
               durationSeconds: 1070,
@@ -575,6 +687,7 @@ async function main() {
           update: {},
           create: {
             id: lesson.id,
+            slug: lesson.slug,
             submoduleId: sm.id,
             position: lesson.position,
             status: 'PUBLISHED',
@@ -594,7 +707,19 @@ async function main() {
               },
             },
             resources: lesson.resources
-              ? { create: lesson.resources.map((r) => ({ label: r.label, fileUrl: r.fileUrl })) }
+              ? {
+                  create: lesson.resources.map((r) => ({
+                    url: r.url,
+                    sizeKb: r.sizeKb,
+                    translations: {
+                      create: (['fr', 'en', 'ar'] as const).map((locale) => ({
+                        locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
+                        title: r.translations[locale].title,
+                        description: r.translations[locale].description,
+                      })),
+                    },
+                  })),
+                }
               : undefined,
           },
         });
