@@ -1,0 +1,494 @@
+// ============================================================
+// MOUSLIH ACADEMY — schema.prisma
+// Base issue du MCD (Blocs 1 à 4), complétée pour couvrir le contrat
+// documenté côté frontend dans DATA-MODEL.md / BACKEND.md :
+//   - Lesson.isFreePreview, Resource (pièces jointes de leçon)
+//   - VideoProvider.YOUTUBE (aperçus gratuits, sans contrôle d'accès
+//     nécessaire) en complément de CLOUDFLARE_STREAM (leçons payantes,
+//     URL de lecture signée après vérification d'inscription)
+//   - Order.ref (référence humaine "TX-XXXXXXX" utilisée dans les URLs
+//     /commande/[ref]/... côté frontend) en plus de l'id technique
+//   - Course.isFeatured / hasCertificate / hasVoiceCorrection
+//   - Testimonial, LessonQuestion, Recitation (correction de récitation)
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Locale {
+  FR
+  EN
+  AR
+}
+
+enum UserRole {
+  LEARNER
+  TEACHER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum AuthTokenType {
+  REFRESH
+  PASSWORD_RESET
+  EMAIL_VERIFY
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  UNPUBLISHED
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum VideoProvider {
+  YOUTUBE
+  CLOUDFLARE_STREAM
+}
+
+enum VideoStatus {
+  PROCESSING
+  READY
+  ERROR
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  WAVE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum AccessType {
+  LIFETIME
+  TEMPORARY
+  GRANTED
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum LessonProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TestimonialKind {
+  TEXT
+  VIDEO
+}
+
+enum RecitationCorrectionStatus {
+  PENDING
+  IN_REVIEW
+  CORRECTED
+}
+
+// ============================================================
+// BLOC 1 — USERS & AUTH
+// ============================================================
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  phone           String?
+  city            String?
+  locale          Locale     @default(FR)
+  role            UserRole   @default(LEARNER)
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  authTokens       AuthToken[]
+  orders           Order[]
+  enrollments      Enrollment[]
+  lessonProgresses LessonProgress[]
+  lessonQuestions  LessonQuestion[]
+  recitations      Recitation[]
+  reviewedRecitations Recitation[] @relation("RecitationReviewer")
+
+  @@map("users")
+}
+
+model AuthToken {
+  id        String        @id @default(uuid())
+  userId    String
+  tokenHash String
+  type      AuthTokenType
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_tokens")
+}
+
+// ============================================================
+// BLOC 2 — CATALOGUE PÉDAGOGIQUE
+// ============================================================
+
+model Course {
+  id                   String        @id @default(uuid())
+  slug                 String        @unique
+  price                Int
+  promoPrice           Int?
+  promoStartAt         DateTime?
+  promoEndAt           DateTime?
+  status               ContentStatus @default(DRAFT)
+  coverImageUrl        String?
+  level                CourseLevel   @default(BEGINNER)
+  totalDurationSeconds Int           @default(0)
+  isFeatured           Boolean       @default(false)
+  hasCertificate       Boolean       @default(false)
+  hasVoiceCorrection   Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  translations CourseTranslation[]
+  modules      Module[]
+  orderItems   OrderItem[]
+  enrollments  Enrollment[]
+  testimonials Testimonial[]
+
+  @@map("courses")
+}
+
+model CourseTranslation {
+  id               String @id @default(uuid())
+  courseId         String
+  locale           Locale
+  title            String
+  shortDescription String
+  description      String
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, locale])
+  @@map("course_translations")
+}
+
+model Module {
+  id        String        @id @default(uuid())
+  courseId  String
+  position  Int
+  status    ContentStatus @default(DRAFT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  course       Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  translations ModuleTranslation[]
+  submodules   Submodule[]
+
+  @@index([courseId])
+  @@map("modules")
+}
+
+model ModuleTranslation {
+  id          String  @id @default(uuid())
+  moduleId    String
+  locale      Locale
+  title       String
+  description String?
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, locale])
+  @@map("module_translations")
+}
+
+model Submodule {
+  id        String        @id @default(uuid())
+  moduleId  String
+  position  Int
+  status    ContentStatus @default(DRAFT)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  module       Module                 @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  translations SubmoduleTranslation[]
+  lessons      Lesson[]
+
+  @@index([moduleId])
+  @@map("submodules")
+}
+
+model SubmoduleTranslation {
+  id          String  @id @default(uuid())
+  submoduleId String
+  locale      Locale
+  title       String
+  description String?
+
+  submodule Submodule @relation(fields: [submoduleId], references: [id], onDelete: Cascade)
+
+  @@unique([submoduleId, locale])
+  @@map("submodule_translations")
+}
+
+model Lesson {
+  id            String        @id @default(uuid())
+  submoduleId   String
+  position      Int
+  status        ContentStatus @default(DRAFT)
+  isFreePreview Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  submodule        Submodule           @relation(fields: [submoduleId], references: [id], onDelete: Cascade)
+  translations     LessonTranslation[]
+  video             Video?
+  resources         Resource[]
+  lessonProgresses  LessonProgress[]
+  lessonQuestions   LessonQuestion[]
+  recitations       Recitation[]
+
+  @@index([submoduleId])
+  @@map("lessons")
+}
+
+model LessonTranslation {
+  id          String  @id @default(uuid())
+  lessonId    String
+  locale      Locale
+  title       String
+  description String?
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, locale])
+  @@map("lesson_translations")
+}
+
+model Video {
+  id              String        @id @default(uuid())
+  lessonId        String        @unique
+  provider        VideoProvider
+  externalId      String
+  durationSeconds Int
+  status          VideoStatus   @default(PROCESSING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("videos")
+}
+
+/// Pièce jointe téléchargeable d'une leçon (PDF, fiche...), stockée sur Cloudflare R2.
+model Resource {
+  id        String   @id @default(uuid())
+  lessonId  String
+  label     String
+  fileUrl   String
+  createdAt DateTime @default(now())
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@map("resources")
+}
+
+// ============================================================
+// BLOC 3 — COMMANDES & PAIEMENTS
+// ============================================================
+
+model Order {
+  id          String      @id @default(uuid())
+  /// Référence humaine ("TX-8842301"), utilisée dans les URLs /commande/[ref]/... du frontend.
+  ref         String      @unique
+  userId      String
+  status      OrderStatus @default(PENDING)
+  totalAmount Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items       OrderItem[]
+  payments    Payment[]
+  enrollments Enrollment[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  courseId  String
+  unitPrice Int
+  createdAt DateTime @default(now())
+
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([courseId])
+  @@map("order_items")
+}
+
+model Payment {
+  id             String          @id @default(uuid())
+  orderId        String
+  provider       PaymentProvider @default(WAVE)
+  transactionRef String          @unique
+  amount         Int
+  status         PaymentStatus   @default(PENDING)
+  rawPayload     Json?
+  paidAt         DateTime?
+  createdAt      DateTime        @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("payments")
+}
+
+// ============================================================
+// BLOC 4 — ACCÈS & PROGRESSION
+// ============================================================
+
+model Enrollment {
+  id         String           @id @default(uuid())
+  userId     String
+  courseId   String
+  orderId    String?
+  accessType AccessType       @default(LIFETIME)
+  expiresAt  DateTime?
+  status     EnrollmentStatus @default(ACTIVE)
+  createdAt  DateTime         @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  order  Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model LessonProgress {
+  id                  String               @id @default(uuid())
+  userId              String
+  lessonId            String
+  status              LessonProgressStatus @default(NOT_STARTED)
+  lastPositionSeconds Int?
+  completedAt         DateTime?
+  updatedAt           DateTime             @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("lesson_progresses")
+}
+
+// ============================================================
+// BLOC 5 — INTERACTION (questions, correction de récitation, avis)
+// ============================================================
+
+model LessonQuestion {
+  id         String    @id @default(uuid())
+  lessonId   String
+  userId     String
+  question   String
+  answer     String?
+  answeredAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@index([userId])
+  @@map("lesson_questions")
+}
+
+/// Récitation envoyée par l'apprenant pour correction (formations avec hasVoiceCorrection).
+model Recitation {
+  id           String                      @id @default(uuid())
+  userId       String
+  lessonId     String
+  audioUrl     String
+  status       RecitationCorrectionStatus  @default(PENDING)
+  feedback     String?
+  reviewedById String?
+  submittedAt  DateTime                    @default(now())
+  reviewedAt   DateTime?
+
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson     Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  reviewedBy User?   @relation("RecitationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([lessonId])
+  @@map("recitations")
+}
+
+model Testimonial {
+  id         String          @id @default(uuid())
+  authorName String
+  authorCity String
+  courseId   String
+  kind       TestimonialKind @default(TEXT)
+  videoUrl   String?
+  isPublished Boolean        @default(true)
+  createdAt  DateTime        @default(now())
+
+  course       Course                    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  translations TestimonialTranslation[]
+
+  @@index([courseId])
+  @@map("testimonials")
+}
+
+model TestimonialTranslation {
+  id            String @id @default(uuid())
+  testimonialId String
+  locale        Locale
+  quote         String
+
+  testimonial Testimonial @relation(fields: [testimonialId], references: [id], onDelete: Cascade)
+
+  @@unique([testimonialId, locale])
+  @@map("testimonial_translations")
+}
