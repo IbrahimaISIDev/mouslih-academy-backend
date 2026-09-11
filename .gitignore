@@ -1,0 +1,24 @@
+node_modules
+# Keep environment variables out of version control
+.env
+.env.local
+
+/src/generated/prisma
+
+# build output
+/dist
+
+# testing / coverage
+/coverage
+
+# misc
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# skills de référence vendorisés automatiquement par `prisma init` pour les assistants IA —
+# documentation externe, pas du code du projet, se périme vite (à re-générer si besoin).
+/.agents
+/.claude
+/.windsurf
+skills-lock.json
