@@ -3,30 +3,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import type { ListCoursesQuery } from './dto/list-courses.query.js';
 import { levelFromFrontend } from './mappers/enums.js';
 import { mapCourse } from './mappers/course.mapper.js';
-
-const DETAIL_INCLUDE = {
-  translations: true,
-  modules: {
-    orderBy: { position: 'asc' as const },
-    include: {
-      translations: true,
-      submodules: {
-        orderBy: { position: 'asc' as const },
-        include: {
-          translations: true,
-          lessons: {
-            orderBy: { position: 'asc' as const },
-            include: {
-              translations: true,
-              video: true,
-              resources: { include: { translations: true } },
-            },
-          },
-        },
-      },
-    },
-  },
-};
+import { COURSE_DETAIL_INCLUDE as DETAIL_INCLUDE } from './mappers/course-detail.include.js';
 
 @Injectable()
 export class CoursesService {
