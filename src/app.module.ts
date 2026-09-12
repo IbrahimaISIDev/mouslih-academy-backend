@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { EnrollmentsModule } from './enrollments/enrollments.module.js';
 import { LessonsModule } from './lessons/lessons.module.js';
+import { OrdersModule } from './orders/orders.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
 @Module({
@@ -16,6 +17,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     CatalogModule,
     EnrollmentsModule,
     LessonsModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
