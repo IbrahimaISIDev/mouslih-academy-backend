@@ -924,6 +924,7 @@ async function main() {
         "Quand je prononce le ع, j'ai l'impression de forcer et ma voix se casse au bout de trois répétitions. Est-ce normal au début ?",
       answer:
         'C’est le signe que vous serrez la gorge. Reprenez à 06:40 : le son doit venir sans effort, comme un souffle retenu. Trois répétitions puis une pause suffisent la première semaine.',
+      answeredById: 'u-oustaz-mouslih',
       answeredAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     },
   });

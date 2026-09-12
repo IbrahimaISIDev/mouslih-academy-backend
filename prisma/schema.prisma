@@ -143,6 +143,7 @@ model User {
   enrollments      Enrollment[]
   lessonProgresses LessonProgress[]
   lessonQuestions  LessonQuestion[]
+  answeredLessonQuestions LessonQuestion[] @relation("LessonQuestionAnswerer")
   recitations      Recitation[]
   reviewedRecitations Recitation[] @relation("RecitationReviewer")
 
@@ -420,6 +421,9 @@ model Enrollment {
   accessType AccessType       @default(LIFETIME)
   expiresAt  DateTime?
   status     EnrollmentStatus @default(ACTIVE)
+  /// Renseigné quand toutes les leçons de la formation sont complétées (Enrollment.completedAt
+  /// côté frontend).
+  completedAt DateTime?
   createdAt  DateTime         @default(now())
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -451,16 +455,20 @@ model LessonProgress {
 // ============================================================
 
 model LessonQuestion {
-  id         String    @id @default(uuid())
-  lessonId   String
-  userId     String
-  question   String
-  answer     String?
-  answeredAt DateTime?
-  createdAt  DateTime  @default(now())
+  id           String    @id @default(uuid())
+  lessonId     String
+  userId       String
+  question     String
+  answer       String?
+  /// Enseignant qui a répondu — nécessaire pour afficher l'auteur de la réponse côté frontend
+  /// (LessonQuestionAnswer.authorName/authorInitials), distinct de l'auteur de la question.
+  answeredById String?
+  answeredAt   DateTime?
+  createdAt    DateTime  @default(now())
 
-  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson     Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answeredBy User?  @relation("LessonQuestionAnswerer", fields: [answeredById], references: [id], onDelete: SetNull)
 
   @@index([lessonId])
   @@index([userId])
