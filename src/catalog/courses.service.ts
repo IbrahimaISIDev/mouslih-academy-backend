@@ -31,7 +31,11 @@ export class CoursesService {
             }
           : {}),
       },
-      include: { translations: true },
+      // Le mock frontend (src/mocks/courses.ts) n'a jamais fait de distinction "liste légère"
+      // / "détail complet" : ce sont les mêmes objets Course, modules inclus. Le tableau de bord
+      // (reprise de la leçon en cours) a besoin de parcourir modules/sous-modules/leçons même à
+      // partir de la liste catalogue — pas seulement depuis findBySlug/findById.
+      include: DETAIL_INCLUDE,
       orderBy: { createdAt: 'asc' },
     });
 
