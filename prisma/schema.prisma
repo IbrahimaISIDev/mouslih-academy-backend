@@ -495,6 +495,10 @@ model Testimonial {
   courseId   String
   kind       TestimonialKind @default(TEXT)
   videoUrl   String?
+  /// Durée affichée sur la vignette, ex. "1 min 05" — témoignages vidéo uniquement.
+  videoDuration String?
+  /// Traitement visuel distinct (fond sombre), réservé à un témoignage par mosaïque.
+  highlighted Boolean        @default(false)
   isPublished Boolean        @default(true)
   createdAt  DateTime        @default(now())
 

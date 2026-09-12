@@ -762,6 +762,7 @@ async function main() {
       courseId: 'c-regles-tajwid',
       kind: 'VIDEO' as const,
       videoUrl: 'https://placeholder.mouslihacademy.sn/testimonials/ibrahima-sarr.mp4',
+      videoDuration: '1 min 05',
       quote: {
         fr: "Les corrections vocales par WhatsApp changent tout — on entend son erreur, on ne la lit pas.",
         en: "Voice corrections over WhatsApp change everything — you hear your mistake, you don't just read it.",
@@ -786,6 +787,7 @@ async function main() {
       authorCity: 'Milan',
       courseId: 'c-fiqh-priere',
       kind: 'TEXT' as const,
+      highlighted: true,
       quote: {
         fr: 'Je vis à Milan. Trouver un enseignant sénégalais rigoureux qui corrige vraiment, c’était impossible avant.',
         en: 'I live in Milan. Finding a rigorous Senegalese teacher who truly corrects you was impossible before.',
@@ -799,6 +801,7 @@ async function main() {
       courseId: 'c-initiation-nourania',
       kind: 'VIDEO' as const,
       videoUrl: 'https://placeholder.mouslihacademy.sn/testimonials/seynabou-gueye.mp4',
+      videoDuration: '2 min 20',
       quote: {
         fr: 'Mon fils de neuf ans suit la Nourania avec moi le soir.',
         en: 'My nine-year-old son follows the Nourania course with me in the evening.',
@@ -818,6 +821,8 @@ async function main() {
         courseId: t.courseId,
         kind: t.kind,
         videoUrl: 'videoUrl' in t ? t.videoUrl : null,
+        videoDuration: 'videoDuration' in t ? t.videoDuration : null,
+        highlighted: 'highlighted' in t ? t.highlighted : false,
         translations: {
           create: (['fr', 'en', 'ar'] as const).map((locale) => ({
             locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
