@@ -9,6 +9,7 @@ import { EnrollmentsModule } from './enrollments/enrollments.module.js';
 import { LessonsModule } from './lessons/lessons.module.js';
 import { OrdersModule } from './orders/orders.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { UsersModule } from './users/users.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     LessonsModule,
     OrdersModule,
     AdminModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
