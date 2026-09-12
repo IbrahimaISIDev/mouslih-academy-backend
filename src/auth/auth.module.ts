@@ -6,10 +6,16 @@ import { AuthService } from './auth.service.js';
 import { RolesGuard } from './guards/roles.guard.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 
+// PassportModule.register(...) est ce qui fournit AuthModuleOptions, requis par AuthGuard('jwt')
+// (JwtAuthGuard) — un import "nu" de PassportModule ne suffit pas. On réexporte cette même
+// instance dynamique pour que les modules qui importent AuthModule puissent utiliser
+// JwtAuthGuard sans avoir à réimporter PassportModule eux-mêmes.
+const passportModule = PassportModule.register({ defaultStrategy: 'jwt' });
+
 @Module({
-  imports: [PassportModule, JwtModule.register({})],
+  imports: [passportModule, JwtModule.register({})],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RolesGuard],
-  exports: [AuthService],
+  exports: [AuthService, passportModule, RolesGuard],
 })
 export class AuthModule {}
