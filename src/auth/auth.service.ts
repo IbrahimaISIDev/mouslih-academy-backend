@@ -57,6 +57,12 @@ export class AuthService {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
+    // Session unique : toute connexion révoque les sessions précédentes de ce compte, pour
+    // empêcher qu'un même accès (payant) soit utilisé simultanément depuis plusieurs appareils.
+    // La session évincée survit jusqu'à l'expiration de son jeton d'accès en cours (15 min par
+    // défaut), faute de pouvoir invalider un JWT déjà signé — refresh() la rejettera ensuite.
+    await this.revokeAllSessions(user.id);
+
     return this.issueTokens(user);
   }
 
@@ -93,6 +99,13 @@ export class AuthService {
     } catch {
       // Jeton déjà invalide/expiré : la déconnexion est de toute façon effective côté client.
     }
+  }
+
+  private async revokeAllSessions(userId: string): Promise<void> {
+    await this.prisma.authToken.updateMany({
+      where: { userId, type: 'REFRESH', revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
   }
 
   private async verifyRefreshToken(refreshToken: string): Promise<RefreshTokenPayload> {
