@@ -8,6 +8,8 @@ import type { UpdateCourseDto } from './dto/update-course.dto.js';
 import type { CreateCourseDto } from './dto/create-course.dto.js';
 import type { CreateModuleDto } from './dto/create-module.dto.js';
 import type { CreateLessonDto } from './dto/create-lesson.dto.js';
+import type { UpdateModuleDto } from './dto/update-module.dto.js';
+import type { UpdateLessonDto } from './dto/update-lesson.dto.js';
 
 const LOCALES = ['fr', 'en', 'ar'] as const;
 
@@ -174,6 +176,73 @@ export class AdminCourseEditorService {
         translations: { create: [{ locale: 'FR', title: dto.title }] },
       },
     });
+
+    return this.getCourseEditor(courseId);
+  }
+
+  async updateModule(courseId: string, moduleId: string, dto: UpdateModuleDto) {
+    const courseModule = await this.prisma.module.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
+    if (!courseModule) {
+      throw new NotFoundException('Module introuvable pour cette formation');
+    }
+
+    await this.prisma.moduleTranslation.upsert({
+      where: { moduleId_locale: { moduleId, locale: 'FR' } },
+      create: { moduleId, locale: 'FR', title: dto.title },
+      update: { title: dto.title },
+    });
+
+    return this.getCourseEditor(courseId);
+  }
+
+  async removeModule(courseId: string, moduleId: string) {
+    const courseModule = await this.prisma.module.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
+    if (!courseModule) {
+      throw new NotFoundException('Module introuvable pour cette formation');
+    }
+
+    // Cascade jusqu'aux sous-modules/leçons (schema.prisma) : supprime aussi la progression des
+    // apprenants sur ces leçons. Acceptable pour un outil d'administration interne, mais
+    // irréversible — le frontend demande confirmation avant d'appeler cet endpoint.
+    await this.prisma.module.delete({ where: { id: moduleId } });
+
+    return this.getCourseEditor(courseId);
+  }
+
+  async updateLesson(
+    courseId: string,
+    moduleId: string,
+    subModuleId: string,
+    lessonId: string,
+    dto: UpdateLessonDto,
+  ) {
+    const lesson = await this.prisma.lesson.findFirst({
+      where: { id: lessonId, submoduleId: subModuleId, submodule: { moduleId, module: { courseId } } },
+      select: { id: true },
+    });
+    if (!lesson) {
+      throw new NotFoundException('Leçon introuvable pour cette formation');
+    }
+
+    await this.prisma.lessonTranslation.upsert({
+      where: { lessonId_locale: { lessonId, locale: 'FR' } },
+      create: { lessonId, locale: 'FR', title: dto.title },
+      update: { title: dto.title },
+    });
+
+    return this.getCourseEditor(courseId);
+  }
+
+  async removeLesson(courseId: string, moduleId: string, subModuleId: string, lessonId: string) {
+    const lesson = await this.prisma.lesson.findFirst({
+      where: { id: lessonId, submoduleId: subModuleId, submodule: { moduleId, module: { courseId } } },
+      select: { id: true },
+    });
+    if (!lesson) {
+      throw new NotFoundException('Leçon introuvable pour cette formation');
+    }
+
+    await this.prisma.lesson.delete({ where: { id: lessonId } });
 
     return this.getCourseEditor(courseId);
   }

@@ -26,6 +26,8 @@ import { CreateModuleDto } from './dto/create-module.dto.js';
 import { CreateLessonDto } from './dto/create-lesson.dto.js';
 import { ReorderCourseDto } from './dto/reorder-course.dto.js';
 import { UpdateCourseDto } from './dto/update-course.dto.js';
+import { UpdateModuleDto } from './dto/update-module.dto.js';
+import { UpdateLessonDto } from './dto/update-lesson.dto.js';
 
 const COVERS_DIR = join(process.cwd(), 'uploads', 'covers');
 const ALLOWED_COVER_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -78,6 +80,16 @@ export class AdminCourseEditorController {
     return this.adminCourseEditorService.addModule(id, dto);
   }
 
+  @Patch(':id/modules/:moduleId')
+  updateModule(@Param('id') id: string, @Param('moduleId') moduleId: string, @Body() dto: UpdateModuleDto) {
+    return this.adminCourseEditorService.updateModule(id, moduleId, dto);
+  }
+
+  @Delete(':id/modules/:moduleId')
+  removeModule(@Param('id') id: string, @Param('moduleId') moduleId: string) {
+    return this.adminCourseEditorService.removeModule(id, moduleId);
+  }
+
   @Post(':id/modules/:moduleId/submodules/:subModuleId/lessons')
   addLesson(
     @Param('id') id: string,
@@ -86,6 +98,27 @@ export class AdminCourseEditorController {
     @Body() dto: CreateLessonDto,
   ) {
     return this.adminCourseEditorService.addLesson(id, moduleId, subModuleId, dto);
+  }
+
+  @Patch(':id/modules/:moduleId/submodules/:subModuleId/lessons/:lessonId')
+  updateLesson(
+    @Param('id') id: string,
+    @Param('moduleId') moduleId: string,
+    @Param('subModuleId') subModuleId: string,
+    @Param('lessonId') lessonId: string,
+    @Body() dto: UpdateLessonDto,
+  ) {
+    return this.adminCourseEditorService.updateLesson(id, moduleId, subModuleId, lessonId, dto);
+  }
+
+  @Delete(':id/modules/:moduleId/submodules/:subModuleId/lessons/:lessonId')
+  removeLesson(
+    @Param('id') id: string,
+    @Param('moduleId') moduleId: string,
+    @Param('subModuleId') subModuleId: string,
+    @Param('lessonId') lessonId: string,
+  ) {
+    return this.adminCourseEditorService.removeLesson(id, moduleId, subModuleId, lessonId);
   }
 
   @Post(':id/cover')
