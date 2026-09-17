@@ -10,6 +10,8 @@ import { WavePaymentProvider, type WaveCheckoutParams } from './wave-payment.pro
  */
 @Injectable()
 export class WaveStubProvider extends WavePaymentProvider {
+  readonly isSimulated = true;
+
   async createCheckoutUrl({ orderRef }: WaveCheckoutParams): Promise<string> {
     return `/commande/${orderRef}/confirmation`;
   }

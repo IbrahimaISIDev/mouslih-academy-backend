@@ -4,7 +4,9 @@ import helmet from 'helmet';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: true — nécessaire pour vérifier la signature HMAC du webhook Wave (WaveWebhookController),
+  // qui doit signer le corps brut de la requête, pas le JSON re-sérialisé.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.use(helmet());
 

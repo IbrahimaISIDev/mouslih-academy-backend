@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -21,6 +22,8 @@ const ORDER_INCLUDE = {
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly waveProvider: WavePaymentProvider,
@@ -75,13 +78,36 @@ export class OrdersService {
       throw new NotFoundException('Commande introuvable');
     }
 
-    if (order.status === 'PENDING' && Date.now() - order.createdAt.getTime() > AUTO_CONFIRM_AFTER_MS) {
+    // Simulation démo uniquement (WaveStubProvider) : avec un vrai fournisseur, seul le webhook
+    // Wave (voir confirmPaymentByRef) confirme un paiement — jamais un simple délai écoulé, ce
+    // qui débloquerait une formation sans paiement réel.
+    if (
+      this.waveProvider.isSimulated &&
+      order.status === 'PENDING' &&
+      Date.now() - order.createdAt.getTime() > AUTO_CONFIRM_AFTER_MS
+    ) {
       await this.confirmPayment(order.id, userId, order.items[0]!.courseId, order.ref, order.totalAmount);
       const updated = await this.prisma.order.findUniqueOrThrow({ where: { id: order.id }, include: ORDER_INCLUDE });
       return mapOrder(updated);
     }
 
     return mapOrder(order);
+  }
+
+  /**
+   * Point d'entrée du webhook Wave (voir WaveWebhookController) : confirme le paiement à partir
+   * de la seule référence de commande, connue de Wave via client_reference. Idempotent — un
+   * webhook rejoué (Wave retente en l'absence d'accusé 2xx) ne doit pas créer de doublon.
+   */
+  async confirmPaymentByRef(ref: string): Promise<void> {
+    const order = await this.prisma.order.findUnique({ where: { ref }, include: ORDER_INCLUDE });
+    if (!order) {
+      this.logger.warn(`Webhook Wave reçu pour une référence de commande inconnue : ${ref}`);
+      return;
+    }
+    if (order.status !== 'PENDING') return;
+
+    await this.confirmPayment(order.id, order.userId, order.items[0]!.courseId, order.ref, order.totalAmount);
   }
 
   private async confirmPayment(
