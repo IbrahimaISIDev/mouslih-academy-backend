@@ -1,5 +1,7 @@
+import { join } from 'node:path';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AdminModule } from './admin/admin.module.js';
@@ -14,6 +16,13 @@ import { UsersModule } from './users/users.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Sert les couvertures uploadées par l'admin (voir AdminCourseEditorController.uploadCover)
+    // sur /uploads/* — un stockage local temporaire, hors préfixe /api volontairement, en
+    // attendant un vrai stockage objet (Cloudflare R2, cf. DATA-MODEL.md).
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
     PrismaModule,
     AuthModule,
     CatalogModule,

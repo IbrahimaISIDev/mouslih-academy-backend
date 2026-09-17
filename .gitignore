@@ -8,6 +8,10 @@ node_modules
 # build output
 /dist
 
+# fichiers uploadés en local (couvertures de formation...) — un vrai stockage
+# (Cloudflare R2) remplacera ce dossier local en production, cf. DATA-MODEL.md
+/uploads
+
 # testing / coverage
 /coverage
 

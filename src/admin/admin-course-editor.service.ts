@@ -6,6 +6,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import type { ReorderCourseDto } from './dto/reorder-course.dto.js';
 import type { UpdateCourseDto } from './dto/update-course.dto.js';
 import type { CreateCourseDto } from './dto/create-course.dto.js';
+import type { CreateModuleDto } from './dto/create-module.dto.js';
+import type { CreateLessonDto } from './dto/create-lesson.dto.js';
 
 const LOCALES = ['fr', 'en', 'ar'] as const;
 
@@ -106,6 +108,72 @@ export class AdminCourseEditorService {
         });
       }
     }
+
+    return this.getCourseEditor(courseId);
+  }
+
+  async setCover(courseId: string, coverImageUrl: string) {
+    const course = await this.prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
+    if (!course) {
+      throw new NotFoundException('Formation introuvable');
+    }
+
+    await this.prisma.course.update({ where: { id: courseId }, data: { coverImageUrl } });
+    return this.getCourseEditor(courseId);
+  }
+
+  async addModule(courseId: string, dto: CreateModuleDto) {
+    const course = await this.prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
+    if (!course) {
+      throw new NotFoundException('Formation introuvable');
+    }
+
+    const position = (await this.prisma.module.count({ where: { courseId } })) + 1;
+
+    await this.prisma.module.create({
+      data: {
+        courseId,
+        position,
+        status: 'DRAFT',
+        translations: { create: [{ locale: 'FR', title: dto.title }] },
+        // Un sous-module par défaut, sans traduction (titre `null` côté frontend) : les leçons
+        // s'y rattachent directement, comme pour les modules à thème unique du seed (Fatiha).
+        submodules: { create: [{ position: 1, status: 'DRAFT' }] },
+      },
+    });
+
+    return this.getCourseEditor(courseId);
+  }
+
+  async addLesson(courseId: string, moduleId: string, subModuleId: string, dto: CreateLessonDto) {
+    const submodule = await this.prisma.submodule.findFirst({
+      where: { id: subModuleId, moduleId, module: { courseId } },
+      select: { id: true },
+    });
+    if (!submodule) {
+      throw new NotFoundException('Sous-module introuvable pour cette formation');
+    }
+
+    const baseSlug = slugify(dto.title) || 'lecon';
+    let slug = baseSlug;
+    let suffix = 2;
+    while (await this.prisma.lesson.findUnique({ where: { slug }, select: { id: true } })) {
+      slug = `${baseSlug}-${suffix}`;
+      suffix += 1;
+    }
+
+    const position = (await this.prisma.lesson.count({ where: { submoduleId: subModuleId } })) + 1;
+
+    await this.prisma.lesson.create({
+      data: {
+        slug,
+        submoduleId: subModuleId,
+        position,
+        status: 'DRAFT',
+        isFreePreview: false,
+        translations: { create: [{ locale: 'FR', title: dto.title }] },
+      },
+    });
 
     return this.getCourseEditor(courseId);
   }
