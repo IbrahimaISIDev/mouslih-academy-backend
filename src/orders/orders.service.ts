@@ -10,6 +10,7 @@ import { EmailService } from '../email/email.service.js';
 import type { CreateOrderDto } from './dto/create-order.dto.js';
 import { mapOrder } from './mappers/order.mapper.js';
 import { WavePaymentProvider } from './payments/wave-payment.provider.js';
+import type { ReceiptData } from './receipt.service.js';
 
 /** Délai simulé avant qu'une commande fraîchement créée soit confirmée par le stub Wave —
  *  même comportement que le mock frontend (features/checkout/api/get-order.ts), pour que la
@@ -94,6 +95,41 @@ export class OrdersService {
     }
 
     return mapOrder(order);
+  }
+
+  async getReceiptData(userId: string, ref: string): Promise<ReceiptData> {
+    const order = await this.prisma.order.findUnique({
+      where: { ref },
+      include: {
+        items: { include: { course: { include: { translations: true } } } },
+        payments: { orderBy: { createdAt: 'desc' }, take: 1 },
+        user: { select: { firstName: true, lastName: true, email: true, locale: true } },
+      },
+    });
+    if (!order || order.userId !== userId) {
+      throw new NotFoundException('Commande introuvable');
+    }
+    if (order.status !== 'PAID') {
+      throw new BadRequestException("Aucun reçu disponible : cette commande n'est pas payée.");
+    }
+
+    const item = order.items[0];
+    const translations = item?.course.translations ?? [];
+    const translation =
+      translations.find((t) => t.locale === order.user.locale) ??
+      translations.find((t) => t.locale === 'FR') ??
+      translations[0];
+
+    return {
+      ref: order.ref,
+      createdAt: order.createdAt,
+      amountXof: order.totalAmount,
+      courseName: translation?.title ?? '',
+      buyerName: `${order.user.firstName} ${order.user.lastName}`,
+      buyerEmail: order.user.email,
+      paymentMethod: 'Wave',
+      transactionRef: order.payments[0]?.transactionRef,
+    };
   }
 
   /**

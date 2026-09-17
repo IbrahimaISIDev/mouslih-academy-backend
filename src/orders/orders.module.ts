@@ -4,6 +4,7 @@ import { EmailModule } from '../email/email.module.js';
 import { OrdersController } from './orders.controller.js';
 import { WaveWebhookController } from './wave-webhook.controller.js';
 import { OrdersService } from './orders.service.js';
+import { ReceiptService } from './receipt.service.js';
 import { WavePaymentProvider } from './payments/wave-payment.provider.js';
 import { WaveStubProvider } from './payments/wave-stub.provider.js';
 import { WaveApiProvider } from './payments/wave-api.provider.js';
@@ -13,6 +14,7 @@ import { WaveApiProvider } from './payments/wave-api.provider.js';
   controllers: [OrdersController, WaveWebhookController],
   providers: [
     OrdersService,
+    ReceiptService,
     {
       provide: WavePaymentProvider,
       // Bascule automatique : dès que WAVE_API_KEY est renseignée (vrai compte marchand), plus
