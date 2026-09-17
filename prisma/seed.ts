@@ -94,12 +94,12 @@ async function main() {
 
   const teacher = await prisma.user.upsert({
     where: { id: 'u-oustaz-mouslih' },
-    update: {},
+    update: { firstName: 'Oustaz', lastName: 'Souleymane Diallo' },
     create: {
       id: 'u-oustaz-mouslih',
       email: 'oustaz.mouslih@mouslihacademy.sn',
       firstName: 'Oustaz',
-      lastName: 'Mouslih',
+      lastName: 'Souleymane Diallo',
       role: 'TEACHER',
       passwordHash: DEMO_PASSWORD_HASH,
     },
