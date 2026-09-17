@@ -127,6 +127,7 @@ async function main() {
     {
       id: 'c-rectification-fatiha',
       slug: 'rectification-fatiha',
+      coverImageUrl: '/images/courses/rectification-fatiha.jpg',
       price: 15000,
       compareAtPrice: 20000,
       level: 'BEGINNER' as const,
@@ -173,6 +174,7 @@ async function main() {
     {
       id: 'c-initiation-nourania',
       slug: 'initiation-nourania',
+      coverImageUrl: '/images/courses/initiation-nourania.jpg',
       price: 25000,
       compareAtPrice: null,
       level: 'BEGINNER' as const,
@@ -213,6 +215,7 @@ async function main() {
     {
       id: 'c-regles-tajwid',
       slug: 'regles-tajwid',
+      coverImageUrl: '/images/courses/regles-tajwid.jpg',
       price: 40000,
       compareAtPrice: null,
       level: 'INTERMEDIATE' as const,
@@ -253,6 +256,7 @@ async function main() {
     {
       id: 'c-fiqh-priere',
       slug: 'fiqh-priere',
+      coverImageUrl: '/images/courses/fiqh-priere.jpg',
       price: 20000,
       compareAtPrice: null,
       level: 'BEGINNER' as const,
@@ -291,6 +295,7 @@ async function main() {
     {
       id: 'c-memorisation-cinq-lignes',
       slug: 'memorisation-cinq-lignes',
+      coverImageUrl: '/images/courses/memorisation-cinq-lignes.jpg',
       price: 30000,
       compareAtPrice: null,
       level: 'INTERMEDIATE' as const,
@@ -331,6 +336,7 @@ async function main() {
     {
       id: 'c-sciences-hadith',
       slug: 'sciences-hadith',
+      coverImageUrl: '/images/courses/sciences-hadith.jpg',
       price: 45000,
       compareAtPrice: null,
       level: 'ADVANCED' as const,
@@ -372,10 +378,11 @@ async function main() {
   for (const c of courses) {
     await prisma.course.upsert({
       where: { id: c.id },
-      update: {},
+      update: { coverImageUrl: c.coverImageUrl },
       create: {
         id: c.id,
         slug: c.slug,
+        coverImageUrl: c.coverImageUrl,
         price: c.price,
         compareAtPrice: c.compareAtPrice,
         level: c.level,
