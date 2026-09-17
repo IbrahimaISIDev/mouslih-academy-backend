@@ -1,7 +1,9 @@
 import { join } from 'node:path';
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AdminModule } from './admin/admin.module.js';
@@ -16,6 +18,9 @@ import { UsersModule } from './users/users.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Garde-fou par défaut contre le brute-force / abus (100 req / min / IP) — AuthController
+    // resserre encore cette limite sur signup/login/refresh via @Throttle(), plus sensibles.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     // Sert les couvertures uploadées par l'admin (voir AdminCourseEditorController.uploadCover)
     // sur /uploads/* — un stockage local temporaire, hors préfixe /api volontairement, en
     // attendant un vrai stockage objet (Cloudflare R2, cf. DATA-MODEL.md).
@@ -33,6 +38,6 @@ import { UsersModule } from './users/users.module.js';
     UsersModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
