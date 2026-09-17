@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { EmailService } from '../email/email.service.js';
 import type { CreateOrderDto } from './dto/create-order.dto.js';
 import { mapOrder } from './mappers/order.mapper.js';
 import { WavePaymentProvider } from './payments/wave-payment.provider.js';
@@ -27,6 +28,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly waveProvider: WavePaymentProvider,
+    private readonly emailService: EmailService,
   ) {}
 
   async createOrder(
@@ -134,6 +136,34 @@ export class OrdersService {
         create: { userId, courseId, orderId, status: 'ACTIVE' },
       }),
     ]);
+
+    // Hors transaction volontairement : un échec/délai d'envoi ne doit jamais faire annuler ou
+    // échouer une confirmation de paiement déjà actée en base.
+    await this.sendAccessEmail(userId, courseId);
+  }
+
+  private async sendAccessEmail(userId: string, courseId: string): Promise<void> {
+    const [user, course] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId }, select: { email: true, firstName: true, locale: true } }),
+      this.prisma.course.findUnique({
+        where: { id: courseId },
+        include: { translations: true },
+      }),
+    ]);
+    if (!user || !course) return;
+
+    const translation =
+      course.translations.find((t) => t.locale === user.locale) ??
+      course.translations.find((t) => t.locale === 'FR') ??
+      course.translations[0];
+    if (!translation) return;
+
+    await this.emailService.sendCourseAccessEmail({
+      to: user.email,
+      firstName: user.firstName,
+      courseName: translation.title,
+      locale: user.locale,
+    });
   }
 }
 

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
+import { EmailModule } from '../email/email.module.js';
 import { OrdersController } from './orders.controller.js';
 import { WaveWebhookController } from './wave-webhook.controller.js';
 import { OrdersService } from './orders.service.js';
@@ -8,7 +9,7 @@ import { WaveStubProvider } from './payments/wave-stub.provider.js';
 import { WaveApiProvider } from './payments/wave-api.provider.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, EmailModule],
   controllers: [OrdersController, WaveWebhookController],
   providers: [
     OrdersService,
