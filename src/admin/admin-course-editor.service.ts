@@ -1,12 +1,131 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { COURSE_DETAIL_INCLUDE } from '../catalog/mappers/course-detail.include.js';
 import { mapCourse } from '../catalog/mappers/course.mapper.js';
+import { levelFromFrontend } from '../catalog/mappers/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { ReorderCourseDto } from './dto/reorder-course.dto.js';
+import type { UpdateCourseDto } from './dto/update-course.dto.js';
+import type { CreateCourseDto } from './dto/create-course.dto.js';
+
+const LOCALES = ['fr', 'en', 'ar'] as const;
+
+function slugify(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 @Injectable()
 export class AdminCourseEditorService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async list() {
+    const courses = await this.prisma.course.findMany({
+      include: COURSE_DETAIL_INCLUDE,
+      orderBy: { createdAt: 'asc' },
+    });
+    return courses.map((course) => mapCourse(course));
+  }
+
+  async create(dto: CreateCourseDto) {
+    const baseSlug = slugify(dto.title) || 'formation';
+    let slug = baseSlug;
+    let suffix = 2;
+    while (await this.prisma.course.findUnique({ where: { slug }, select: { id: true } })) {
+      slug = `${baseSlug}-${suffix}`;
+      suffix += 1;
+    }
+
+    const course = await this.prisma.course.create({
+      data: {
+        slug,
+        price: 0,
+        status: 'DRAFT',
+        translations: {
+          create: LOCALES.map((locale) => ({
+            locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
+            title: locale === 'fr' ? dto.title : '',
+            subtitle: '',
+            cardDescription: '',
+            description: '',
+          })),
+        },
+      },
+      include: COURSE_DETAIL_INCLUDE,
+    });
+
+    return mapCourse(course);
+  }
+
+  async update(courseId: string, dto: UpdateCourseDto) {
+    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+    if (!course) {
+      throw new NotFoundException('Formation introuvable');
+    }
+
+    const level = dto.level ? levelFromFrontend(dto.level) : undefined;
+
+    await this.prisma.course.update({
+      where: { id: courseId },
+      data: {
+        ...(level ? { level } : {}),
+        ...(dto.priceXof !== undefined ? { price: dto.priceXof } : {}),
+        ...(dto.compareAtPriceXof !== undefined ? { compareAtPrice: dto.compareAtPriceXof } : {}),
+        ...(dto.hasCertificate !== undefined ? { hasCertificate: dto.hasCertificate } : {}),
+        ...(dto.hasVoiceCorrection !== undefined ? { hasVoiceCorrection: dto.hasVoiceCorrection } : {}),
+        ...(dto.status ? { status: dto.status === 'published' ? 'PUBLISHED' : 'DRAFT' } : {}),
+      },
+    });
+
+    if (dto.translations) {
+      for (const locale of LOCALES) {
+        const fields = dto.translations[locale];
+        if (!fields) continue;
+
+        const data = {
+          ...(fields.title !== undefined ? { title: fields.title } : {}),
+          ...(fields.subtitle !== undefined ? { subtitle: fields.subtitle } : {}),
+          ...(fields.description !== undefined ? { description: fields.description } : {}),
+        };
+        if (Object.keys(data).length === 0) continue;
+
+        await this.prisma.courseTranslation.upsert({
+          where: { courseId_locale: { courseId, locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR' } },
+          create: {
+            courseId,
+            locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
+            title: fields.title ?? '',
+            subtitle: fields.subtitle ?? '',
+            cardDescription: '',
+            description: fields.description ?? '',
+          },
+          update: data,
+        });
+      }
+    }
+
+    return this.getCourseEditor(courseId);
+  }
+
+  async remove(courseId: string): Promise<void> {
+    const course = await this.prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
+    if (!course) {
+      throw new NotFoundException('Formation introuvable');
+    }
+
+    try {
+      await this.prisma.course.delete({ where: { id: courseId } });
+    } catch {
+      // OrderItem/Enrollment pointent vers Course en onDelete: Restrict (schema.prisma) : des
+      // ventes/inscriptions existantes bloquent la suppression physique, volontairement.
+      throw new ConflictException(
+        'Impossible de supprimer cette formation : des commandes ou inscriptions y sont rattachées.',
+      );
+    }
+  }
 
   async getCourseEditor(courseId: string) {
     // Contrairement au catalogue public, l'admin doit pouvoir voir/éditer une formation en
