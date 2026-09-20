@@ -29,7 +29,11 @@ import { UpdateCourseDto } from './dto/update-course.dto.js';
 import { UpdateModuleDto } from './dto/update-module.dto.js';
 import { UpdateLessonDto } from './dto/update-lesson.dto.js';
 
-const COVERS_DIR = join(process.cwd(), 'uploads', 'covers');
+// UPLOADS_DIR est configurable car le système de fichiers de la plupart des hébergeurs (Render
+// notamment) est éphémère : sans disque persistant attaché et pointé ici via cette variable, les
+// couvertures uploadées disparaissent au redéploiement suivant. Voir DEPLOYMENT.md.
+const UPLOADS_DIR = process.env['UPLOADS_DIR'] ?? join(process.cwd(), 'uploads');
+const COVERS_DIR = join(UPLOADS_DIR, 'covers');
 const ALLOWED_COVER_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 // L'URL stockée doit être absolue : contrairement aux couvertures de démo (servies par le
 // frontend depuis public/images/), un fichier uploadé ici vit sur CETTE API, une origine

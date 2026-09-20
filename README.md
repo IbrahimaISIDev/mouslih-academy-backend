@@ -6,6 +6,8 @@ contrat documenté dans `BACKEND.md` et `DATA-MODEL.md` du frontend
 frontend n'a besoin d'être modifié pour brancher cette API, seul le point de bascule
 `NEXT_PUBLIC_USE_MOCKS=false` change.
 
+Pour déployer en production (Render + Neon), voir [`DEPLOYMENT.md`](./DEPLOYMENT.md).
+
 ## Installation
 
 Prérequis : Node 22+, [pnpm](https://pnpm.io) 10+, Docker (pour PostgreSQL en local).

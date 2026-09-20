@@ -24,9 +24,11 @@ import { UsersModule } from './users/users.module.js';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     // Sert les couvertures uploadées par l'admin (voir AdminCourseEditorController.uploadCover)
     // sur /uploads/* — un stockage local temporaire, hors préfixe /api volontairement, en
-    // attendant un vrai stockage objet (Cloudflare R2, cf. DATA-MODEL.md).
+    // attendant un vrai stockage objet (Cloudflare R2, cf. DATA-MODEL.md). UPLOADS_DIR permet de
+    // pointer vers un disque persistant en production (voir DEPLOYMENT.md) ; par défaut,
+    // identique au dossier local utilisé en dev.
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), 'uploads'),
+      rootPath: process.env['UPLOADS_DIR'] ?? join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
     }),
     PrismaModule,

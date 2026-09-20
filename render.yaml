@@ -1,0 +1,67 @@
+# Blueprint Render — permet un déploiement "New +" → "Blueprint" en pointant ce dépôt : Render
+# crée le service avec les bonnes commandes et la bonne liste de variables toutes prêtes à
+# remplir (celles en `sync: false` sont demandées dans l'interface, jamais stockées ici). Voir
+# DEPLOYMENT.md pour le détail de chaque variable et l'ordre des étapes.
+services:
+  - type: web
+    name: mouslih-academy-backend
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm prisma generate && pnpm run build
+    startCommand: pnpm prisma migrate deploy && pnpm run start:prod
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      - key: UPLOADS_DIR
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      - key: FRONTEND_URL
+        sync: false
+      - key: CLOUDFLARE_ACCOUNT_ID
+        sync: false
+      - key: CLOUDFLARE_STREAM_API_TOKEN
+        sync: false
+      - key: CLOUDFLARE_STREAM_CUSTOMER_CODE
+        sync: false
+      - key: CLOUDFLARE_STREAM_SIGNING_KEY_ID
+        sync: false
+      - key: CLOUDFLARE_STREAM_SIGNING_KEY
+        sync: false
+      - key: CLOUDFLARE_R2_ACCESS_KEY_ID
+        sync: false
+      - key: CLOUDFLARE_R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: CLOUDFLARE_R2_BUCKET
+        sync: false
+      - key: CLOUDFLARE_R2_ENDPOINT
+        sync: false
+      - key: CLOUDFLARE_R2_PUBLIC_URL
+        sync: false
+      - key: WAVE_API_KEY
+        sync: false
+      - key: WAVE_WEBHOOK_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
