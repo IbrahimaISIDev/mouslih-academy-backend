@@ -244,6 +244,7 @@ export class AdminDashboardService {
       }
 
       return {
+        id: user.id,
         name,
         initials: getInitials(name),
         city: user.city ?? '',
