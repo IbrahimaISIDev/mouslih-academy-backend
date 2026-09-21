@@ -7,8 +7,8 @@ services:
     name: mouslih-academy-backend
     runtime: node
     plan: free
-    buildCommand: npm install -g pnpm@10.33.0 && pnpm install --frozen-lockfile && pnpm prisma generate && pnpm run build
-    startCommand: pnpm prisma migrate deploy && pnpm run start:prod
+    buildCommand: npx pnpm@10.33.0 install --frozen-lockfile && npx pnpm@10.33.0 prisma generate && npx pnpm@10.33.0 run build
+    startCommand: npx pnpm@10.33.0 prisma migrate deploy && npx pnpm@10.33.0 run start:prod
     healthCheckPath: /api
     envVars:
       - key: NODE_ENV
