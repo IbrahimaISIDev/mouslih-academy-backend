@@ -25,7 +25,7 @@ async function main() {
       firstName: 'Aminata',
       lastName: 'Diallo',
       city: 'Dakar',
-      phone: '+221 77 123 45 67',
+      phone: '+221771234567',
       createdAt: new Date('2026-08-14'),
     },
     {
@@ -34,7 +34,7 @@ async function main() {
       firstName: 'Ibrahima',
       lastName: 'Sarr',
       city: 'Thiès',
-      phone: '+221 76 884 21 09',
+      phone: '+221768842109',
       createdAt: new Date('2026-08-09'),
     },
     {
@@ -43,7 +43,7 @@ async function main() {
       firstName: 'Khadija',
       lastName: 'Fall',
       city: 'Milan',
-      phone: '+221 70 445 12 88',
+      phone: '+221704451288',
       createdAt: new Date('2026-08-31'),
     },
     {
@@ -52,7 +52,7 @@ async function main() {
       firstName: 'Moussa',
       lastName: 'Bâ',
       city: 'Kaolack',
-      phone: '+221 78 220 91 34',
+      phone: '+221782209134',
       createdAt: new Date('2026-08-30'),
     },
     {
@@ -61,7 +61,7 @@ async function main() {
       firstName: 'Fatou',
       lastName: 'Ndiaye',
       city: 'Saint-Louis',
-      phone: '+221 77 903 66 12',
+      phone: '+221779036612',
       createdAt: new Date('2026-06-28'),
     },
     {
@@ -70,7 +70,7 @@ async function main() {
       firstName: 'Seynabou',
       lastName: 'Gueye',
       city: 'Rufisque',
-      phone: '+221 76 118 40 27',
+      phone: '+221761184027',
       createdAt: new Date('2026-08-31'),
     },
     {
@@ -79,7 +79,7 @@ async function main() {
       firstName: 'Ousmane',
       lastName: 'Diop',
       city: 'Dakar',
-      phone: '+221 78 552 03 76',
+      phone: '+221785520376',
       createdAt: new Date('2026-05-12'),
     },
   ];

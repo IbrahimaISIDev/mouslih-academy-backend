@@ -1,6 +1,22 @@
-import { IsBoolean, IsEmail, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, IsString, MinLength, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
+import { parsePhoneNumber } from 'libphonenumber-js';
 
-const SENEGAL_PHONE_REGEX = /^(77|78|76|70)\d{7}$/;
+@ValidatorConstraint({ name: 'isPhoneNumber', async: false })
+export class IsPhoneNumberConstraint implements ValidatorConstraintInterface {
+  validate(value: string) {
+    if (!value) return false;
+    try {
+      const phoneNumber = parsePhoneNumber(value);
+      return phoneNumber && phoneNumber.isValid();
+    } catch {
+      return false;
+    }
+  }
+
+  defaultMessage() {
+    return 'Numéro de téléphone invalide';
+  }
+}
 
 export class SignupDto {
   @IsString()
@@ -15,7 +31,7 @@ export class SignupDto {
   email!: string;
 
   @IsString()
-  @Matches(SENEGAL_PHONE_REGEX, { message: 'Numéro sénégalais attendu (77, 78, 76, 70)' })
+  @IsPhoneNumberConstraint()
   phone!: string;
 
   @IsString()
