@@ -16,6 +16,11 @@ export class CoursesController {
     return this.coursesService.findById(id);
   }
 
+  @Get('stats')
+  publicStats() {
+    return this.coursesService.publicStats();
+  }
+
   @Get(':slug')
   findBySlug(@Param('slug') slug: string) {
     return this.coursesService.findBySlug(slug);

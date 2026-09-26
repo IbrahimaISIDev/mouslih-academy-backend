@@ -69,4 +69,14 @@ export class CoursesService {
     }
     return mapCourse(course);
   }
+
+  /** Statistiques publiques (accueil, page d'inscription) — aucune donnée sensible, uniquement
+   *  des compteurs agrégés, pour remplacer des chiffres marketing codés en dur. */
+  async publicStats() {
+    const [learnersCount, coursesCount] = await Promise.all([
+      this.prisma.user.count({ where: { role: 'LEARNER' } }),
+      this.prisma.course.count({ where: { status: 'PUBLISHED' } }),
+    ]);
+    return { learnersCount, coursesCount };
+  }
 }
