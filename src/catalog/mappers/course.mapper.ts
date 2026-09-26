@@ -99,7 +99,7 @@ function mapModule(module_: ModuleRow) {
   };
 }
 
-export function mapCourse(course: CourseRow) {
+export function mapCourse(course: CourseRow, recentPurchasesCount?: number) {
   return {
     id: course.id,
     slug: course.slug,
@@ -126,5 +126,9 @@ export function mapCourse(course: CourseRow) {
       'cardDescription',
       'description',
     ]),
+    // Uniquement calculé sur findBySlug (voir CoursesService) : trop coûteux à recalculer pour
+    // chaque ligne d'une liste. `undefined` ailleurs plutôt que 0, pour ne pas laisser croire à
+    // un vrai "zéro vente" sur des écrans qui ne l'affichent pas.
+    recentPurchasesCount,
   };
 }

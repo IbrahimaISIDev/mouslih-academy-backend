@@ -50,7 +50,13 @@ export class CoursesService {
     if (!course) {
       throw new NotFoundException('Formation introuvable');
     }
-    return mapCourse(course);
+
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const recentPurchasesCount = await this.prisma.orderItem.count({
+      where: { courseId: course.id, order: { status: 'PAID', createdAt: { gte: sevenDaysAgo } } },
+    });
+
+    return mapCourse(course, recentPurchasesCount);
   }
 
   async findById(id: string) {

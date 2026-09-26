@@ -17,7 +17,11 @@ interface UserRow {
   createdAt: Date;
 }
 
-export function mapProfile(user: UserRow, pendingRecitation: PendingRecitationRow | null) {
+export function mapProfile(
+  user: UserRow,
+  pendingRecitation: PendingRecitationRow | null,
+  lessonsCompletedThisWeek: number,
+) {
   return {
     id: user.id,
     firstName: user.firstName,
@@ -26,6 +30,7 @@ export function mapProfile(user: UserRow, pendingRecitation: PendingRecitationRo
     email: user.email,
     phone: user.phone ?? '',
     joinedAt: user.createdAt.toISOString(),
+    lessonsCompletedThisWeek,
     // Pas de flux de changement de mot de passe branché côté frontend aujourd'hui (formulaire
     // non relié à une API réelle) : on retombe sur la date d'inscription, faute de mieux.
     passwordChangedAt: user.createdAt.toISOString(),
