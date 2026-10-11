@@ -99,6 +99,25 @@ l'aperçu signale le compte `admin@mouslihacademy.sn`, c'est qu'un seed de démo
 sur cette base : changer son mot de passe (`password123`) ou le supprimer avant l'ouverture
 au public.
 
+## 3 ter. Sécuriser la production avant l'ouverture au public
+
+Si un seed de démo a tourné sur la base de production, le compte `admin@mouslihacademy.sn`
+y existe avec le mot de passe `password123`, ainsi que des comptes, commandes et témoignages
+fictifs. À traiter **avant** d'ouvrir le site :
+
+```bash
+DATABASE_URL="<chaîne Neon directe>" pnpm prisma:secure-production                 # aperçu
+DATABASE_URL="<chaîne Neon directe>" pnpm prisma:secure-production --apply \
+  --purge-demo --admin-email=<adresse réelle de l'admin>                              # applique
+```
+
+- Le nouveau mot de passe est demandé au clavier, sans s'afficher (12 caractères minimum,
+  lettres et chiffres) ; toutes les sessions du compte admin sont fermées.
+- `--purge-demo` supprime uniquement les comptes du seed (identifiant **et** adresse doivent
+  correspondre), leurs commandes et les 6 témoignages fictifs. Aucun vrai compte, aucune
+  formation n'est touché.
+- `--admin-email` (facultatif) remplace l'adresse de connexion du compte admin.
+
 ## 4. Après le déploiement du frontend
 
 Une fois l'URL Vercel définitive connue, revenir ici mettre à jour `CORS_ORIGIN` et
