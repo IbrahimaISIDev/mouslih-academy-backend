@@ -1,7 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { COURSE_DETAIL_INCLUDE } from '../catalog/mappers/course-detail.include.js';
 import { mapCourse } from '../catalog/mappers/course.mapper.js';
 import { levelFromFrontend } from '../catalog/mappers/enums.js';
+import { parseYouTubeVideoId } from '../media/youtube.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { ReorderCourseDto } from './dto/reorder-course.dto.js';
 import type { UpdateCourseDto } from './dto/update-course.dto.js';
@@ -176,6 +177,7 @@ export class AdminCourseEditorService {
         translations: { create: [{ locale: 'FR', title: dto.title }] },
       },
     });
+    await this.refreshCourseTotals(courseId);
 
     return this.getCourseEditor(courseId);
   }
@@ -205,6 +207,7 @@ export class AdminCourseEditorService {
     // apprenants sur ces leçons. Acceptable pour un outil d'administration interne, mais
     // irréversible — le frontend demande confirmation avant d'appeler cet endpoint.
     await this.prisma.module.delete({ where: { id: moduleId } });
+    await this.refreshCourseTotals(courseId);
 
     return this.getCourseEditor(courseId);
   }
@@ -224,13 +227,61 @@ export class AdminCourseEditorService {
       throw new NotFoundException('Leçon introuvable pour cette formation');
     }
 
-    await this.prisma.lessonTranslation.upsert({
-      where: { lessonId_locale: { lessonId, locale: 'FR' } },
-      create: { lessonId, locale: 'FR', title: dto.title },
-      update: { title: dto.title },
-    });
+    if (dto.title !== undefined) {
+      await this.prisma.lessonTranslation.upsert({
+        where: { lessonId_locale: { lessonId, locale: 'FR' } },
+        create: { lessonId, locale: 'FR', title: dto.title },
+        update: { title: dto.title },
+      });
+    }
+
+    if (dto.isFreePreview !== undefined) {
+      await this.prisma.lesson.update({ where: { id: lessonId }, data: { isFreePreview: dto.isFreePreview } });
+    }
+
+    if (dto.youtubeUrl === null) {
+      await this.prisma.video.deleteMany({ where: { lessonId } });
+    } else if (dto.youtubeUrl !== undefined) {
+      const videoId = parseYouTubeVideoId(dto.youtubeUrl);
+      if (!videoId) {
+        throw new BadRequestException(
+          'Lien YouTube non reconnu. Collez le lien de partage de la vidéo (youtu.be/… ou youtube.com/watch?v=…).',
+        );
+      }
+      const durationSeconds = dto.durationSeconds ?? 0;
+      await this.prisma.video.upsert({
+        where: { lessonId },
+        create: { lessonId, provider: 'YOUTUBE', externalId: videoId, durationSeconds, status: 'READY' },
+        update: {
+          provider: 'YOUTUBE',
+          externalId: videoId,
+          status: 'READY',
+          ...(dto.durationSeconds !== undefined ? { durationSeconds } : {}),
+        },
+      });
+    } else if (dto.durationSeconds !== undefined) {
+      await this.prisma.video.updateMany({ where: { lessonId }, data: { durationSeconds: dto.durationSeconds } });
+    }
+
+    await this.refreshCourseTotals(courseId);
 
     return this.getCourseEditor(courseId);
+  }
+
+  /** Course.lessonCount / totalDurationSeconds sont dénormalisés (affichage des cards) : on les
+   *  recalcule à chaque changement de programme pour qu'ils ne dérivent jamais du contenu réel. */
+  private async refreshCourseTotals(courseId: string): Promise<void> {
+    const lessons = await this.prisma.lesson.findMany({
+      where: { submodule: { module: { courseId } } },
+      select: { video: { select: { durationSeconds: true } } },
+    });
+    await this.prisma.course.update({
+      where: { id: courseId },
+      data: {
+        lessonCount: lessons.length,
+        totalDurationSeconds: lessons.reduce((sum, l) => sum + (l.video?.durationSeconds ?? 0), 0),
+      },
+    });
   }
 
   async removeLesson(courseId: string, moduleId: string, subModuleId: string, lessonId: string) {
@@ -243,6 +294,7 @@ export class AdminCourseEditorService {
     }
 
     await this.prisma.lesson.delete({ where: { id: lessonId } });
+    await this.refreshCourseTotals(courseId);
 
     return this.getCourseEditor(courseId);
   }
@@ -276,9 +328,17 @@ export class AdminCourseEditorService {
     }
 
     const lessons = course.modules.flatMap((m) => m.submodules.flatMap((sm) => sm.lessons));
-    const videoStatus: Record<string, { status: 'ready' | 'uploading' | 'missing'; uploadPct?: number }> = {};
+    const videoStatus: Record<
+      string,
+      { status: 'ready' | 'uploading' | 'missing'; uploadPct?: number; youtubeId?: string }
+    > = {};
     for (const lesson of lessons) {
-      videoStatus[lesson.id] = { status: lessonVideoStatus(lesson.video) };
+      videoStatus[lesson.id] = {
+        status: lessonVideoStatus(lesson.video),
+        // Réservé à l'éditeur admin : le catalogue public ne divulgue jamais l'identifiant
+        // d'une vidéo payante (voir publicVideoUrl).
+        ...(lesson.video?.provider === 'YOUTUBE' ? { youtubeId: lesson.video.externalId } : {}),
+      };
     }
 
     return { course: mapCourse(course), videoStatus };

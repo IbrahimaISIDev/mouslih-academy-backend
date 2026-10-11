@@ -30,6 +30,22 @@ export function buildOptionalI18nText<T extends LocalizedRow>(rows: T[], field: 
 }
 
 /**
+ * Liste traduite (une colonne tableau par locale) → I18nText[], point par point. La longueur
+ * de référence est celle du français ; un point absent dans une locale retombe sur 'fr'.
+ */
+export function buildI18nList<T extends LocalizedRow>(rows: T[], field: keyof T): I18nText[] {
+  const byLocale = new Map(rows.map((row) => [row.locale.toLowerCase(), row]));
+  const listOf = (locale: Locale): string[] => {
+    const value = byLocale.get(locale)?.[field];
+    return Array.isArray(value) ? value.map(String) : [];
+  };
+  const fr = listOf('fr');
+  const en = listOf('en');
+  const ar = listOf('ar');
+  return fr.map((item, i) => ({ fr: item, en: en[i] || item, ar: ar[i] || item }));
+}
+
+/**
  * "complete" si toutes les locales ont ce champ, "empty" si aucune, "partial" sinon.
  * Reflète Course.translationStatus côté frontend.
  */

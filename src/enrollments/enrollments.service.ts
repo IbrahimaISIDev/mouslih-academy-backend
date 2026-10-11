@@ -1,10 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CloudflareStreamService } from '../media/cloudflare-stream.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { mapEnrollment } from './mappers/enrollment.mapper.js';
 
+/** Ce dont le lecteur de leçon a besoin pour jouer la vidéo. `provider: null` : pas encore de
+ *  vidéo exploitable (non envoyée, ou lecture signée Stream non configurée). */
+export type LessonPlayback =
+  | { provider: 'youtube'; videoId: string }
+  | { provider: 'stream'; url: string }
+  | { provider: null };
+
 @Injectable()
 export class EnrollmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly stream: CloudflareStreamService,
+  ) {}
 
   async listForUser(userId: string) {
     const enrollments = await this.prisma.enrollment.findMany({
@@ -85,6 +96,40 @@ export class EnrollmentsService {
       update: { status: 'IN_PROGRESS', lastPositionSeconds: positionSeconds },
       create: { userId, lessonId, status: 'IN_PROGRESS', lastPositionSeconds: positionSeconds },
     });
+  }
+
+  /**
+   * Seul point d'émission d'une source vidéo pour une leçon payante : le catalogue public n'en
+   * expose que pour les aperçus gratuits (voir publicVideoUrl). Une leçon payante n'est servie
+   * qu'à un apprenant inscrit — même 404 qu'une leçon inexistante, pour ne rien révéler.
+   *
+   * Limite connue des vidéos YouTube « non répertoriées » utilisées en phase de lancement :
+   * l'identifiant transmis à l'apprenant inscrit reste partageable. Seul Cloudflare Stream
+   * (URL signée, expirante) protège réellement une vidéo payante.
+   */
+  async getPlayback(userId: string, lessonId: string): Promise<LessonPlayback> {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      include: { video: true, submodule: { include: { module: { include: { course: true } } } } },
+    });
+    if (!lesson || lesson.submodule.module.course.status !== 'PUBLISHED') {
+      throw new NotFoundException('Leçon non trouvée dans une formation possédée');
+    }
+
+    if (!lesson.isFreePreview) {
+      await this.assertOwnership(userId, lessonId);
+    }
+
+    const video = lesson.video;
+    if (!video || video.status !== 'READY') return { provider: null };
+
+    if (video.provider === 'YOUTUBE') {
+      return { provider: 'youtube', videoId: video.externalId };
+    }
+    if (this.stream.canSignPlaybackUrls) {
+      return { provider: 'stream', url: this.stream.getSignedPlaybackUrl(video.externalId) };
+    }
+    return { provider: null };
   }
 
   /** Une leçon n'est accessible en progression que si son cours fait partie d'un enrollment actif. */

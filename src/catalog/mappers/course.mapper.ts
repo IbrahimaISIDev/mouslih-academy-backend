@@ -1,4 +1,4 @@
-import { buildI18nText, buildOptionalI18nText, computeTranslationStatus } from './i18n.js';
+import { buildI18nList, buildI18nText, buildOptionalI18nText, computeTranslationStatus } from './i18n.js';
 import { courseStatusToFrontend, levelToFrontend } from './enums.js';
 import { publicVideoUrl } from './video-url.js';
 import type { ContentStatus, CourseLevel, VideoProvider } from '../../generated/prisma/enums.js';
@@ -21,13 +21,21 @@ interface VideoRow {
   durationSeconds: number;
 }
 
+interface MistakeRow {
+  id: string;
+  passage: string;
+  translations: TranslationRow[];
+}
+
 interface LessonRow {
   id: string;
   slug: string;
   isFreePreview: boolean;
+  passage: string | null;
   translations: TranslationRow[];
   video: VideoRow | null;
   resources: ResourceRow[];
+  mistakes: MistakeRow[];
 }
 
 interface SubmoduleRow {
@@ -70,15 +78,31 @@ function mapResource(resource: ResourceRow) {
   };
 }
 
+function mapMistake(mistake: MistakeRow) {
+  return {
+    id: mistake.id,
+    passage: mistake.passage,
+    title: buildI18nText(mistake.translations, 'title'),
+    mistake: buildI18nText(mistake.translations, 'mistake'),
+    correction: buildI18nText(mistake.translations, 'correction'),
+    rule: buildI18nText(mistake.translations, 'rule'),
+  };
+}
+
 function mapLesson(lesson: LessonRow) {
   return {
     id: lesson.id,
     slug: lesson.slug,
     title: buildI18nText(lesson.translations, 'title'),
+    description: buildOptionalI18nText(lesson.translations, 'description'),
+    objective: buildOptionalI18nText(lesson.translations, 'objective'),
+    keyPoints: buildI18nList(lesson.translations, 'keyPoints'),
+    passage: lesson.passage ?? undefined,
     durationSeconds: lesson.video?.durationSeconds ?? 0,
     isFreePreview: lesson.isFreePreview,
     videoUrl: publicVideoUrl(lesson.video, lesson.isFreePreview),
     resources: lesson.resources.map(mapResource),
+    mistakes: lesson.mistakes.map(mapMistake),
   };
 }
 

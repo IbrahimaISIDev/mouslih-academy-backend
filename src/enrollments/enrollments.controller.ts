@@ -15,6 +15,11 @@ export class EnrollmentsController {
     return this.enrollmentsService.listForUser(user.userId);
   }
 
+  @Get('lessons/:id/playback')
+  playback(@CurrentUser() user: AuthenticatedUser, @Param('id') lessonId: string) {
+    return this.enrollmentsService.getPlayback(user.userId, lessonId);
+  }
+
   @Post('lessons/:id/complete')
   completeLesson(@CurrentUser() user: AuthenticatedUser, @Param('id') lessonId: string) {
     return this.enrollmentsService.completeLesson(user.userId, lessonId);

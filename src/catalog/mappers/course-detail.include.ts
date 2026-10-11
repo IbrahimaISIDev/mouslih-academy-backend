@@ -1,5 +1,5 @@
 /** Partagé entre le catalogue public et l'éditeur admin : arbre complet formation → modules →
- * sous-modules → leçons (traductions, vidéo, ressources). */
+ * sous-modules → leçons (traductions, vidéo, ressources, erreurs corrigées). */
 export const COURSE_DETAIL_INCLUDE = {
   translations: true,
   modules: {
@@ -16,6 +16,7 @@ export const COURSE_DETAIL_INCLUDE = {
               translations: true,
               video: true,
               resources: { include: { translations: true } },
+              mistakes: { orderBy: { position: 'asc' as const }, include: { translations: true } },
             },
           },
         },

@@ -7,6 +7,16 @@ import 'dotenv/config';
 import bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
+import {
+  FATIHA_PLACEHOLDER_YOUTUBE_ID,
+  FATIHA_TOTAL_DURATION_SECONDS,
+  fatihaCourseText,
+  fatihaLessons,
+  fatihaModule,
+} from './fatiha-content.js';
+
+const LOCALES = ['fr', 'en', 'ar'] as const;
+const toDbLocale = (locale: (typeof LOCALES)[number]) => locale.toUpperCase() as 'FR' | 'EN' | 'AR';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env['DATABASE_URL'] }),
@@ -128,48 +138,40 @@ async function main() {
       id: 'c-rectification-fatiha',
       slug: 'rectification-fatiha',
       coverImageUrl: '/images/courses/rectification-fatiha.jpg',
-      price: 15000,
-      compareAtPrice: 20000,
+      price: 10150,
+      compareAtPrice: null,
       level: 'BEGINNER' as const,
-      lessonCount: 11,
-      totalDurationSeconds: 10800,
+      lessonCount: fatihaLessons.length,
+      totalDurationSeconds: FATIHA_TOTAL_DURATION_SECONDS,
+      status: 'PUBLISHED' as const,
       isFeatured: true,
-      hasCertificate: true,
-      hasVoiceCorrection: true,
-      translations: {
-        fr: {
-          title: 'Rectification de la Fatiha',
-          subtitle: 'Onze leçons pour réciter juste',
-          cardDescription:
-            'Lettre par lettre, corrigez la sourate que vous récitez dix-sept fois par jour.',
-          heroTagline:
-            'Vous la récitez dix-sept fois par jour. Onze leçons pour la réciter juste : chaque lettre, chaque prolongation, chaque arrêt — avec correction personnalisée de votre récitation.',
-          heroTaglineMobile:
-            'Vous la récitez dix-sept fois par jour. Onze leçons pour la réciter juste.',
-          description:
-            "La Fatiha est la seule sourate obligatoire à chaque unité de prière. Une lettre mal prononcée peut changer le sens du verset — et pourtant, la plupart des fidèles n'ont jamais eu de correction individuelle depuis l'enfance.\n\nCette formation reprend la sourate verset par verset. Vous enregistrez votre récitation à la fin de chaque module, et recevez une correction vocale sous 48 heures.",
-        },
-        en: {
-          title: 'Perfecting Al-Fatiha',
-          subtitle: 'Eleven lessons to recite it right',
-          cardDescription: 'Letter by letter, correct the surah you recite seventeen times a day.',
-          heroTagline:
-            'You recite it seventeen times a day. Eleven lessons to recite it right: every letter, every prolongation, every stop — with personalized correction of your recitation.',
-          heroTaglineMobile: 'You recite it seventeen times a day. Eleven lessons to recite it right.',
-          description:
-            'Al-Fatiha is the only surah obligatory in every unit of prayer. A mispronounced letter can change the meaning of a verse — yet most worshippers have never had individual correction since childhood.',
-        },
-        ar: {
-          title: 'تصحيح سورة الفاتحة',
-          subtitle: 'أحد عشر درسًا للتلاوة الصحيحة',
-          cardDescription: 'حرفًا حرفًا، صحّح السورة التي تتلوها سبع عشرة مرة يوميًا.',
-          heroTagline:
-            'تتلوها سبع عشرة مرة يوميًا. أحد عشر درسًا لتلاوتها بشكل صحيح: كل حرف، كل مدّ، كل وقفة — مع تصحيح شخصي لتلاوتك.',
-          heroTaglineMobile: 'تتلوها سبع عشرة مرة يوميًا. أحد عشر درسًا لتلاوتها بشكل صحيح.',
-          description:
-            'سورة الفاتحة هي السورة الوحيدة الواجبة في كل ركعة. قد يغيّر حرف يُنطق خطأً معنى الآية.',
-        },
-      },
+      // Exercices, correction vocale et attestation : masqués tant que l'offre se limite aux
+      // 5 vidéos (décision du 2026-10-10).
+      hasCertificate: false,
+      hasVoiceCorrection: false,
+      translations: Object.fromEntries(
+        LOCALES.map((locale) => [
+          locale,
+          {
+            title: fatihaCourseText.title[locale],
+            subtitle: fatihaCourseText.subtitle[locale],
+            cardDescription: fatihaCourseText.cardDescription[locale],
+            heroTagline: fatihaCourseText.heroTagline[locale],
+            heroTaglineMobile: fatihaCourseText.heroTaglineMobile[locale],
+            description: fatihaCourseText.description[locale],
+          },
+        ]),
+      ) as Record<
+        (typeof LOCALES)[number],
+        {
+          title: string;
+          subtitle: string;
+          cardDescription: string;
+          heroTagline: string | null;
+          heroTaglineMobile: string | null;
+          description: string;
+        }
+      >,
     },
     {
       id: 'c-initiation-nourania',
@@ -180,7 +182,9 @@ async function main() {
       level: 'BEGINNER' as const,
       lessonCount: 14,
       totalDurationSeconds: 22800,
-      isFeatured: true,
+      // Masquée : le site se concentre sur « Rectifiez votre Fâtiḥah » (2026-10-10).
+      status: 'DRAFT' as const,
+      isFeatured: false,
       hasCertificate: true,
       hasVoiceCorrection: true,
       translations: {
@@ -221,7 +225,9 @@ async function main() {
       level: 'INTERMEDIATE' as const,
       lessonCount: 22,
       totalDurationSeconds: 39900,
-      isFeatured: true,
+      // Masquée : le site se concentre sur « Rectifiez votre Fâtiḥah » (2026-10-10).
+      status: 'DRAFT' as const,
+      isFeatured: false,
       hasCertificate: true,
       hasVoiceCorrection: true,
       translations: {
@@ -262,6 +268,8 @@ async function main() {
       level: 'BEGINNER' as const,
       lessonCount: 12,
       totalDurationSeconds: 16200,
+      // Masquée : le site se concentre sur « Rectifiez votre Fâtiḥah » (2026-10-10).
+      status: 'DRAFT' as const,
       isFeatured: false,
       hasCertificate: true,
       hasVoiceCorrection: false,
@@ -301,6 +309,8 @@ async function main() {
       level: 'INTERMEDIATE' as const,
       lessonCount: 16,
       totalDurationSeconds: 25800,
+      // Masquée : le site se concentre sur « Rectifiez votre Fâtiḥah » (2026-10-10).
+      status: 'DRAFT' as const,
       isFeatured: false,
       hasCertificate: true,
       hasVoiceCorrection: false,
@@ -342,6 +352,8 @@ async function main() {
       level: 'ADVANCED' as const,
       lessonCount: 18,
       totalDurationSeconds: 34800,
+      // Masquée : le site se concentre sur « Rectifiez votre Fâtiḥah » (2026-10-10).
+      status: 'DRAFT' as const,
       isFeatured: false,
       hasCertificate: true,
       hasVoiceCorrection: false,
@@ -376,411 +388,186 @@ async function main() {
   ];
 
   for (const c of courses) {
+    const courseFields = {
+      coverImageUrl: c.coverImageUrl,
+      price: c.price,
+      compareAtPrice: c.compareAtPrice,
+      level: c.level,
+      lessonCount: c.lessonCount,
+      totalDurationSeconds: c.totalDurationSeconds,
+      isFeatured: c.isFeatured,
+      hasCertificate: c.hasCertificate,
+      hasVoiceCorrection: c.hasVoiceCorrection,
+      status: c.status,
+    };
+    // Mise à jour complète (et pas seulement à la création) : relancer le seed sur une base
+    // existante doit suffire à la remettre en phase avec le contenu de référence.
     await prisma.course.upsert({
       where: { id: c.id },
-      update: { coverImageUrl: c.coverImageUrl },
-      create: {
-        id: c.id,
-        slug: c.slug,
-        coverImageUrl: c.coverImageUrl,
-        price: c.price,
-        compareAtPrice: c.compareAtPrice,
-        level: c.level,
-        lessonCount: c.lessonCount,
-        totalDurationSeconds: c.totalDurationSeconds,
-        isFeatured: c.isFeatured,
-        hasCertificate: c.hasCertificate,
-        hasVoiceCorrection: c.hasVoiceCorrection,
-        status: 'PUBLISHED',
-        translations: {
-          create: (['fr', 'en', 'ar'] as const).map((locale) => ({
-            locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
-            title: c.translations[locale].title,
-            subtitle: c.translations[locale].subtitle,
-            cardDescription: c.translations[locale].cardDescription,
-            heroTagline: c.translations[locale].heroTagline,
-            heroTaglineMobile: c.translations[locale].heroTaglineMobile,
-            description: c.translations[locale].description,
-          })),
-        },
-      },
+      update: courseFields,
+      create: { id: c.id, slug: c.slug, ...courseFields },
+    });
+
+    for (const locale of LOCALES) {
+      const fields = {
+        title: c.translations[locale].title,
+        subtitle: c.translations[locale].subtitle,
+        cardDescription: c.translations[locale].cardDescription,
+        heroTagline: c.translations[locale].heroTagline,
+        heroTaglineMobile: c.translations[locale].heroTaglineMobile,
+        description: c.translations[locale].description,
+      };
+      await prisma.courseTranslation.upsert({
+        where: { courseId_locale: { courseId: c.id, locale: toDbLocale(locale) } },
+        update: fields,
+        create: { courseId: c.id, locale: toDbLocale(locale), ...fields },
+      });
+    }
+  }
+
+
+  // ---------------------------------------------------------------------
+  // Programme de « Rectifiez votre Fâtiḥah » : 1 module, 5 vidéos, 2 erreurs
+  // corrigées par vidéo (prisma/fatiha-content.ts, fidèle à CONTENU-FATIHA.md).
+  // Les vidéos pointent vers une vidéo YouTube provisoire, à remplacer depuis
+  // l'éditeur admin quand les vraies vidéos seront prêtes.
+  // ---------------------------------------------------------------------
+  const FATIHA_COURSE_ID = 'c-rectification-fatiha';
+
+  // Retire l'ancien programme (4 modules, 11 leçons) — la cascade emporte leçons, vidéos,
+  // progression, questions et récitations rattachées.
+  await prisma.module.deleteMany({ where: { courseId: FATIHA_COURSE_ID, id: { not: fatihaModule.id } } });
+
+  await prisma.module.upsert({
+    where: { id: fatihaModule.id },
+    update: { position: 1, status: 'PUBLISHED' },
+    create: { id: fatihaModule.id, courseId: FATIHA_COURSE_ID, position: 1, status: 'PUBLISHED' },
+  });
+  for (const locale of LOCALES) {
+    await prisma.moduleTranslation.upsert({
+      where: { moduleId_locale: { moduleId: fatihaModule.id, locale: toDbLocale(locale) } },
+      update: { title: fatihaModule.title[locale] },
+      create: { moduleId: fatihaModule.id, locale: toDbLocale(locale), title: fatihaModule.title[locale] },
     });
   }
 
-  // ---------------------------------------------------------------------
-  // Programme complet de « Rectification de la Fatiha » — jeu de données
-  // de référence (fidèle à src/mocks/curriculum-fatiha.ts).
-  // ---------------------------------------------------------------------
-  const fatihaModules = [
-    {
-      id: 'm1-avant-de-reciter',
-      position: 1,
-      title: { fr: 'Avant de réciter', en: 'Before reciting', ar: 'قبل التلاوة' },
-      submodules: [
-        {
-          id: 'm1-sm1',
-          position: 1,
-          title: null,
-          lessons: [
-            {
-              id: 'l1',
-              slug: 'pourquoi-rectifier-la-fatiha',
-              position: 1,
-              isFreePreview: true,
-              durationSeconds: 492,
-              title: {
-                fr: 'Pourquoi la Fatiha doit être rectifiée',
-                en: 'Why Al-Fatiha must be corrected',
-                ar: 'لماذا يجب تصحيح الفاتحة',
-              },
-            },
-            {
-              id: 'l2',
-              slug: 'poser-sa-respiration',
-              position: 2,
-              isFreePreview: true,
-              durationSeconds: 700,
-              title: {
-                fr: 'Poser sa respiration et son souffle',
-                en: 'Settling your breath',
-                ar: 'ضبط النفَس والتنفّس',
-              },
-            },
-            {
-              id: 'l3',
-              slug: 'intention-posture-concentration',
-              position: 3,
-              isFreePreview: false,
-              durationSeconds: 545,
-              title: {
-                fr: "L'intention, la posture, la concentration",
-                en: 'Intention, posture, concentration',
-                ar: 'النية والجلسة والتركيز',
-              },
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'm2-les-lettres-qui-trahissent',
-      position: 2,
-      title: {
-        fr: 'Les lettres qui trahissent',
-        en: 'The letters that betray the reciter',
-        ar: 'الحروف التي تخون القارئ',
-      },
-      submodules: [
-        {
-          id: 'm2-sm-emphatiques',
-          position: 1,
-          title: { fr: 'Les emphatiques', en: 'The emphatics', ar: 'الحروف المفخّمة' },
-          lessons: [
-            {
-              id: 'l4',
-              slug: 'le-sad-le-dad-et-la-machoire',
-              position: 1,
-              isFreePreview: false,
-              durationSeconds: 980,
-              title: {
-                fr: 'Le ص, le ض et la mâchoire',
-                en: 'Ṣād, Ḍād and the jaw',
-                ar: 'الصاد والضاد والفك',
-              },
-            },
-            {
-              id: 'l5',
-              slug: 'le-ta-et-le-za-distinguer-sans-forcer',
-              position: 2,
-              isFreePreview: false,
-              durationSeconds: 895,
-              title: {
-                fr: 'Le ط et le ظ : distinguer sans forcer',
-                en: 'Ṭāʾ and Ẓāʾ: distinguishing without straining',
-                ar: 'الطاء والظاء : التمييز دون إجهاد',
-              },
-            },
-          ],
-        },
-        {
-          id: 'm2-sm-gutturales',
-          position: 2,
-          title: { fr: 'Les gutturales', en: 'The gutturals', ar: 'الحروف الحلقية' },
-          lessons: [
-            {
-              id: 'l6',
-              slug: 'le-ayn-et-le-ha-ouvrir-la-gorge',
-              position: 1,
-              isFreePreview: false,
-              durationSeconds: 1090,
-              title: {
-                fr: 'Le ع et le ح : ouvrir la gorge',
-                en: 'ʿAyn and Ḥāʾ: opening the throat',
-                ar: 'العين والحاء : فتح الحلق',
-              },
-              resources: [
-                {
-                  url: 'https://placeholder.mouslihacademy.sn/resources/carte-articulation.pdf',
-                  sizeKb: 420,
-                  translations: {
-                    fr: { title: "Carte des points d'articulation", description: 'Schéma annoté de la gorge et de la bouche' },
-                    en: { title: 'Map of articulation points', description: 'Annotated diagram of the throat and mouth' },
-                    ar: { title: 'خريطة مخارج الحروف', description: 'رسم توضيحي مشروح للحلق والفم' },
-                  },
-                },
-                {
-                  url: 'https://placeholder.mouslihacademy.sn/resources/tableau-gutturales.pdf',
-                  sizeKb: 180,
-                  translations: {
-                    fr: { title: 'Tableau des lettres gutturales', description: 'Les six lettres, leur sortie, les confusions courantes' },
-                    en: { title: 'Table of guttural letters', description: 'The six letters, their articulation point, common confusions' },
-                    ar: { title: 'جدول الحروف الحلقية', description: 'الحروف الستة، مخارجها، الأخطاء الشائعة' },
-                  },
-                },
-                {
-                  url: 'https://placeholder.mouslihacademy.sn/resources/exercices-module-2.pdf',
-                  sizeKb: 90,
-                  translations: {
-                    fr: { title: 'Exercices de répétition — module 2', description: 'À réciter puis enregistrer avant la leçon 7' },
-                    en: { title: 'Repetition exercises — module 2', description: 'To recite then record before lesson 7' },
-                    ar: { title: 'تمارين التكرار — الوحدة 2', description: 'تُتلى ثم تُسجَّل قبل الدرس 7' },
-                  },
-                },
-              ],
-            },
-            {
-              id: 'l7',
-              slug: 'le-qaf-et-le-kaf-le-point-dappui',
-              position: 2,
-              isFreePreview: false,
-              durationSeconds: 1115,
-              title: {
-                fr: "Le ق et le ك : le point d'appui",
-                en: "Le ق et le ك : le point d'appui",
-                ar: 'القاف والكاف : نقطة الارتكاز',
-              },
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'm3-les-prolongations-et-les-arrets',
-      position: 3,
-      title: {
-        fr: 'Les prolongations et les arrêts',
-        en: 'Les prolongations et les arrêts',
-        ar: 'المدود والوقوف',
-      },
-      submodules: [
-        {
-          id: 'm3-sm1',
-          position: 1,
-          title: null,
-          lessons: [
-            {
-              id: 'l8',
-              slug: 'compter-les-temps-de-prolongation',
-              position: 1,
-              isFreePreview: false,
-              durationSeconds: 1185,
-              title: {
-                fr: 'Compter les temps de prolongation',
-                en: 'Compter les temps de prolongation',
-                ar: 'عدّ حركات المد',
-              },
-            },
-            {
-              id: 'l9',
-              slug: 'ou-sarreter-sans-briser-le-sens',
-              position: 2,
-              isFreePreview: false,
-              durationSeconds: 1110,
-              title: {
-                fr: "Où s'arrêter sans briser le sens",
-                en: "Où s'arrêter sans briser le sens",
-                ar: 'أين نقف دون كسر المعنى',
-              },
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'm4-reciter-la-sourate-en-entier',
-      position: 4,
-      title: {
-        fr: 'Réciter la sourate en entier',
-        en: 'Réciter la sourate en entier',
-        ar: 'تلاوة السورة كاملة',
-      },
-      submodules: [
-        {
-          id: 'm4-sm1',
-          position: 1,
-          title: null,
-          lessons: [
-            {
-              id: 'l10',
-              slug: 'recitation-guidee-verset-par-verset',
-              position: 1,
-              isFreePreview: false,
-              durationSeconds: 1450,
-              title: {
-                fr: 'Récitation guidée, verset par verset',
-                en: 'Récitation guidée, verset par verset',
-                ar: 'تلاوة موجّهة، آية بآية',
-              },
-            },
-            {
-              id: 'l11',
-              slug: 'enregistrer-et-envoyer-votre-recitation',
-              position: 2,
-              isFreePreview: false,
-              durationSeconds: 1070,
-              title: {
-                fr: 'Enregistrer et envoyer votre récitation',
-                en: 'Enregistrer et envoyer votre récitation',
-                ar: 'تسجيل تلاوتك وإرسالها',
-              },
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  await prisma.submodule.upsert({
+    where: { id: fatihaModule.subModuleId },
+    update: { position: 1, status: 'PUBLISHED' },
+    create: { id: fatihaModule.subModuleId, moduleId: fatihaModule.id, position: 1, status: 'PUBLISHED' },
+  });
+  await prisma.lesson.deleteMany({
+    where: { submoduleId: fatihaModule.subModuleId, id: { notIn: fatihaLessons.map((l) => l.id) } },
+  });
 
-  for (const mod of fatihaModules) {
-    await prisma.module.upsert({
-      where: { id: mod.id },
+  for (const [index, lesson] of fatihaLessons.entries()) {
+    const lessonFields = {
+      slug: lesson.slug,
+      position: index + 1,
+      status: 'PUBLISHED' as const,
+      isFreePreview: lesson.isFreePreview,
+      passage: lesson.passage,
+    };
+    await prisma.lesson.upsert({
+      where: { id: lesson.id },
+      update: lessonFields,
+      create: { id: lesson.id, submoduleId: fatihaModule.subModuleId, ...lessonFields },
+    });
+
+    for (const locale of LOCALES) {
+      const fields = {
+        title: lesson.title[locale],
+        description: lesson.description[locale],
+        objective: lesson.objective[locale],
+        keyPoints: lesson.keyPoints.map((point) => point[locale]),
+      };
+      await prisma.lessonTranslation.upsert({
+        where: { lessonId_locale: { lessonId: lesson.id, locale: toDbLocale(locale) } },
+        update: fields,
+        create: { lessonId: lesson.id, locale: toDbLocale(locale), ...fields },
+      });
+    }
+
+    // Vidéo provisoire : on ne l'impose qu'à la création, pour ne jamais écraser un vrai lien
+    // déjà saisi depuis l'admin en relançant le seed.
+    await prisma.video.upsert({
+      where: { lessonId: lesson.id },
       update: {},
       create: {
-        id: mod.id,
-        courseId: 'c-rectification-fatiha',
-        position: mod.position,
-        status: 'PUBLISHED',
-        translations: {
-          create: (['fr', 'en', 'ar'] as const).map((locale) => ({
-            locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
-            title: mod.title[locale],
-          })),
-        },
+        lessonId: lesson.id,
+        provider: 'YOUTUBE',
+        externalId: FATIHA_PLACEHOLDER_YOUTUBE_ID,
+        durationSeconds: lesson.durationSeconds,
+        status: 'READY',
       },
     });
 
-    for (const sm of mod.submodules) {
-      await prisma.submodule.upsert({
-        where: { id: sm.id },
-        update: {},
-        create: {
-          id: sm.id,
-          moduleId: mod.id,
-          position: sm.position,
-          status: 'PUBLISHED',
-          translations: sm.title
-            ? {
-                create: (['fr', 'en', 'ar'] as const).map((locale) => ({
-                  locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
-                  title: sm.title![locale],
-                })),
-              }
-            : undefined,
+    await prisma.lessonMistake.deleteMany({ where: { lessonId: lesson.id } });
+    for (const [position, mistake] of lesson.mistakes.entries()) {
+      await prisma.lessonMistake.create({
+        data: {
+          lessonId: lesson.id,
+          position: position + 1,
+          passage: mistake.passage,
+          translations: {
+            create: LOCALES.map((locale) => ({
+              locale: toDbLocale(locale),
+              title: mistake.title[locale],
+              mistake: mistake.mistake[locale],
+              correction: mistake.correction[locale],
+              rule: mistake.rule[locale],
+            })),
+          },
         },
       });
-
-      for (const lesson of sm.lessons) {
-        await prisma.lesson.upsert({
-          where: { id: lesson.id },
-          update: {},
-          create: {
-            id: lesson.id,
-            slug: lesson.slug,
-            submoduleId: sm.id,
-            position: lesson.position,
-            status: 'PUBLISHED',
-            isFreePreview: lesson.isFreePreview,
-            translations: {
-              create: (['fr', 'en', 'ar'] as const).map((locale) => ({
-                locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
-                title: lesson.title[locale],
-              })),
-            },
-            video: {
-              create: {
-                provider: lesson.isFreePreview ? 'YOUTUBE' : 'CLOUDFLARE_STREAM',
-                externalId: lesson.isFreePreview ? `demo-${lesson.id}` : `stream-demo-${lesson.id}`,
-                durationSeconds: lesson.durationSeconds,
-                status: 'READY',
-              },
-            },
-            resources: lesson.resources
-              ? {
-                  create: lesson.resources.map((r) => ({
-                    url: r.url,
-                    sizeKb: r.sizeKb,
-                    translations: {
-                      create: (['fr', 'en', 'ar'] as const).map((locale) => ({
-                        locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
-                        title: r.translations[locale].title,
-                        description: r.translations[locale].description,
-                      })),
-                    },
-                  })),
-                }
-              : undefined,
-          },
-        });
-      }
     }
   }
 
   // ---------------------------------------------------------------------
-  // Témoignages
+  // Témoignages — FICTIFS, données de démonstration uniquement : à remplacer
+  // par de vrais témoignages d'apprenants avant toute mise en ligne.
+  // Tous rattachés à la seule formation visible.
   // ---------------------------------------------------------------------
   const testimonials = [
     {
       id: 't-aminata-diallo',
       authorName: 'Aminata Diallo',
       authorCity: 'Dakar',
-      courseId: 'c-rectification-fatiha',
       kind: 'TEXT' as const,
       quote: {
-        fr: "Je récitais la Fatiha depuis vingt ans avec trois erreurs que personne ne m'avait signalées. Onze leçons ont suffi.",
-        en: 'I had been reciting Al-Fatiha for twenty years with three mistakes no one had ever pointed out. Eleven lessons were enough.',
-        ar: 'كنت أتلو الفاتحة منذ عشرين عامًا بثلاثة أخطاء لم ينبهني إليها أحد. كفتني أحد عشر درسًا.',
+        fr: "Je récitais la Fâtiḥah depuis vingt ans avec des erreurs que personne ne m'avait signalées. Cinq vidéos ont suffi à les corriger.",
+        en: 'I had been reciting Al-Fâtiḥah for twenty years with mistakes no one had ever pointed out. Five videos were enough to correct them.',
+        ar: 'كنت أتلو الفاتحة منذ عشرين عامًا بأخطاء لم ينبهني إليها أحد. كفتني خمسة دروس مرئية لتصحيحها.',
       },
     },
     {
       id: 't-moussa-ba',
       authorName: 'Moussa Bâ',
       authorCity: 'Kaolack',
-      courseId: 'c-memorisation-cinq-lignes',
       kind: 'TEXT' as const,
       quote: {
-        fr: "La méthode des cinq lignes m'a fait tenir six mois là où j'abandonnais après deux semaines. Le secret, c'est la révision imposée.",
-        en: 'The five-lines method kept me going for six months, when I used to give up after two weeks.',
-        ar: 'منهج الأسطر الخمسة جعلني أستمر ستة أشهر بينما كنت أتوقف بعد أسبوعين.',
+        fr: 'Je confondais le ذ et le ز sans même m’en rendre compte. La quatrième vidéo m’a appris à placer ma langue.',
+        en: 'I was confusing ذ and ز without even realising it. The fourth video taught me where to place my tongue.',
+        ar: 'كنت أخلط بين الذال والزاي دون أن أنتبه، فعلّمني الدرس الرابع أين أضع لساني.',
       },
     },
     {
       id: 't-ibrahima-sarr',
       authorName: 'Ibrahima Sarr',
       authorCity: 'Thiès',
-      courseId: 'c-regles-tajwid',
       kind: 'VIDEO' as const,
       videoUrl: 'https://placeholder.mouslihacademy.sn/testimonials/ibrahima-sarr.mp4',
       videoDuration: '1 min 05',
       quote: {
-        fr: "Les corrections vocales par WhatsApp changent tout — on entend son erreur, on ne la lit pas.",
-        en: "Voice corrections over WhatsApp change everything — you hear your mistake, you don't just read it.",
-        ar: 'التصحيحات الصوتية عبر واتساب تغيّر كل شيء — تسمع خطأك، لا تكتفي بقراءته.',
+        fr: "Entendre l'erreur puis la bonne prononciation, l'une après l'autre : c'est ce qui m'a enfin fait comprendre le ض.",
+        en: 'Hearing the mistake and then the correct pronunciation, one after the other, is what finally made me understand the ض.',
+        ar: 'سماع الخطأ ثم النطق الصحيح، الواحد تلو الآخر، هو ما جعلني أفهم الضاد أخيرًا.',
       },
     },
     {
       id: 't-fatou-ndiaye',
       authorName: 'Fatou Ndiaye',
       authorCity: 'Saint-Louis',
-      courseId: 'c-initiation-nourania',
       kind: 'TEXT' as const,
       quote: {
         fr: 'Payé avec Wave en trente secondes, la formation était débloquée avant que je range mon téléphone.',
@@ -792,155 +579,162 @@ async function main() {
       id: 't-khadija-fall',
       authorName: 'Khadija Fall',
       authorCity: 'Milan',
-      courseId: 'c-fiqh-priere',
       kind: 'TEXT' as const,
       highlighted: true,
       quote: {
-        fr: 'Je vis à Milan. Trouver un enseignant sénégalais rigoureux qui corrige vraiment, c’était impossible avant.',
-        en: 'I live in Milan. Finding a rigorous Senegalese teacher who truly corrects you was impossible before.',
-        ar: 'أعيش في ميلانو. كان إيجاد أستاذ سنغالي صارم يصحّح فعليًا أمرًا مستحيلاً من قبل.',
+        fr: 'Je vis à Milan. Trouver un enseignement rigoureux de la récitation, en français, était impossible avant.',
+        en: 'I live in Milan. Finding rigorous recitation teaching, in French, was impossible before.',
+        ar: 'أعيش في ميلانو. كان إيجاد تعليم دقيق للتلاوة باللغة الفرنسية أمرًا مستحيلاً من قبل.',
       },
     },
     {
       id: 't-seynabou-gueye',
       authorName: 'Seynabou Gueye',
       authorCity: 'Rufisque',
-      courseId: 'c-initiation-nourania',
       kind: 'VIDEO' as const,
       videoUrl: 'https://placeholder.mouslihacademy.sn/testimonials/seynabou-gueye.mp4',
       videoDuration: '2 min 20',
       quote: {
-        fr: 'Mon fils de neuf ans suit la Nourania avec moi le soir.',
-        en: 'My nine-year-old son follows the Nourania course with me in the evening.',
-        ar: 'ابني البالغ من العمر تسع سنوات يتابع معي درس النورانية في المساء.',
+        fr: 'Mon fils de neuf ans regarde les vidéos avec moi le soir.',
+        en: 'My nine-year-old son watches the videos with me in the evening.',
+        ar: 'ابني البالغ من العمر تسع سنوات يشاهد الدروس معي في المساء.',
       },
     },
   ];
 
   for (const t of testimonials) {
+    const fields = {
+      authorName: t.authorName,
+      authorCity: t.authorCity,
+      courseId: FATIHA_COURSE_ID,
+      kind: t.kind,
+      videoUrl: 'videoUrl' in t ? t.videoUrl : null,
+      videoDuration: 'videoDuration' in t ? t.videoDuration : null,
+      highlighted: 'highlighted' in t ? t.highlighted : false,
+    };
     await prisma.testimonial.upsert({
       where: { id: t.id },
-      update: {},
-      create: {
-        id: t.id,
-        authorName: t.authorName,
-        authorCity: t.authorCity,
-        courseId: t.courseId,
-        kind: t.kind,
-        videoUrl: 'videoUrl' in t ? t.videoUrl : null,
-        videoDuration: 'videoDuration' in t ? t.videoDuration : null,
-        highlighted: 'highlighted' in t ? t.highlighted : false,
-        translations: {
-          create: (['fr', 'en', 'ar'] as const).map((locale) => ({
-            locale: locale.toUpperCase() as 'FR' | 'EN' | 'AR',
-            quote: t.quote[locale],
-          })),
-        },
-      },
+      update: fields,
+      create: { id: t.id, ...fields },
     });
-  }
-
-  // ---------------------------------------------------------------------
-  // Commandes (fidèle à src/mocks/orders.ts)
-  // ---------------------------------------------------------------------
-  const orders = [
-    { ref: 'TX-8842301', userId: 'u-aminata-diallo', courseId: 'c-rectification-fatiha', amount: 15000, status: 'PAID' as const, createdAt: '2026-08-30T18:22:00' },
-    { ref: 'TX-8619042', userId: 'u-aminata-diallo', courseId: 'c-fiqh-priere', amount: 20000, status: 'PAID' as const, createdAt: '2026-07-02' },
-    { ref: 'TX-8901276', userId: 'u-aminata-diallo', courseId: 'c-initiation-nourania', amount: 25000, status: 'FAILED' as const, createdAt: '2026-06-28' },
-    { ref: 'TX-8851107', userId: 'u-seynabou-gueye', courseId: 'c-initiation-nourania', amount: 25000, status: 'PAID' as const, createdAt: '2026-08-31T09:12:00' },
-    { ref: 'TX-8850442', userId: 'u-khadija-fall', courseId: 'c-fiqh-priere', amount: 20000, status: 'PAID' as const, createdAt: '2026-08-31T06:40:00' },
-    { ref: 'TX-8848019', userId: 'u-moussa-ba', courseId: 'c-memorisation-cinq-lignes', amount: 30000, status: 'PENDING' as const, createdAt: '2026-08-30T21:05:00' },
-    { ref: 'TX-8846755', userId: 'u-ibrahima-sarr', courseId: 'c-regles-tajwid', amount: 40000, status: 'FAILED' as const, createdAt: '2026-08-30T14:58:00' },
-    { ref: 'TX-8839210', userId: 'u-ousmane-diop', courseId: 'c-rectification-fatiha', amount: 15000, status: 'PAID' as const, createdAt: '2026-08-29T11:30:00' },
-    { ref: 'TX-8590117', userId: 'u-fatou-ndiaye', courseId: 'c-initiation-nourania', amount: 25000, status: 'REFUNDED' as const, createdAt: '2026-06-28' },
-  ];
-
-  for (const o of orders) {
-    const order = await prisma.order.upsert({
-      where: { ref: o.ref },
-      update: {},
-      create: {
-        ref: o.ref,
-        userId: o.userId,
-        status: o.status,
-        totalAmount: o.amount,
-        createdAt: new Date(o.createdAt),
-        items: { create: [{ courseId: o.courseId, unitPrice: o.amount }] },
-        payments:
-          o.status === 'PAID'
-            ? {
-                create: [
-                  {
-                    transactionRef: `WAVE-${o.ref}`,
-                    amount: o.amount,
-                    status: 'SUCCESS',
-                    paidAt: new Date(o.createdAt),
-                  },
-                ],
-              }
-            : undefined,
-      },
-    });
-
-    if (o.status === 'PAID') {
-      await prisma.enrollment.upsert({
-        where: { userId_courseId: { userId: o.userId, courseId: o.courseId } },
-        update: {},
-        create: { userId: o.userId, courseId: o.courseId, orderId: order.id },
+    for (const locale of LOCALES) {
+      await prisma.testimonialTranslation.upsert({
+        where: { testimonialId_locale: { testimonialId: t.id, locale: toDbLocale(locale) } },
+        update: { quote: t.quote[locale] },
+        create: { testimonialId: t.id, locale: toDbLocale(locale), quote: t.quote[locale] },
       });
     }
   }
 
   // ---------------------------------------------------------------------
-  // Progression d'Aminata sur Rectification de la Fatiha :
-  // l1-l5 terminées, l6 en cours (reprise à 252 s).
+  // Commandes (fidèle à src/mocks/orders.ts) — toutes sur la seule formation
+  // visible, au prix de 10 150 F.
   // ---------------------------------------------------------------------
-  const completedFatihaLessons = ['l1', 'l2', 'l3', 'l4', 'l5'];
-  for (const lessonId of completedFatihaLessons) {
+  const FATIHA_PRICE = 10150;
+  const orders = [
+    { ref: 'TX-8842301', userId: 'u-aminata-diallo', status: 'PAID' as const, createdAt: '2026-08-30T18:22:00' },
+    { ref: 'TX-8901276', userId: 'u-aminata-diallo', status: 'FAILED' as const, createdAt: '2026-08-30T18:09:00' },
+    { ref: 'TX-8851107', userId: 'u-seynabou-gueye', status: 'PAID' as const, createdAt: '2026-08-31T09:12:00' },
+    { ref: 'TX-8850442', userId: 'u-khadija-fall', status: 'PAID' as const, createdAt: '2026-08-31T06:40:00' },
+    { ref: 'TX-8848019', userId: 'u-moussa-ba', status: 'PENDING' as const, createdAt: '2026-08-30T21:05:00' },
+    { ref: 'TX-8846755', userId: 'u-ibrahima-sarr', status: 'FAILED' as const, createdAt: '2026-08-30T14:58:00' },
+    { ref: 'TX-8839210', userId: 'u-ousmane-diop', status: 'PAID' as const, createdAt: '2026-08-29T11:30:00' },
+    { ref: 'TX-8619042', userId: 'u-fatou-ndiaye', status: 'PAID' as const, createdAt: '2026-07-02T10:15:00' },
+    { ref: 'TX-8590117', userId: 'u-fatou-ndiaye', status: 'REFUNDED' as const, createdAt: '2026-06-28T16:40:00' },
+  ];
+
+  const demoUserIds = users.map((u) => u.id);
+  // Inscriptions de démo sur les formations désormais masquées : retirées pour que le jeu de
+  // démo reflète le recentrage (les vraies inscriptions, hors comptes de démo, ne sont pas touchées).
+  await prisma.enrollment.deleteMany({
+    where: { userId: { in: demoUserIds }, courseId: { not: FATIHA_COURSE_ID } },
+  });
+
+  for (const o of orders) {
+    const order = await prisma.order.upsert({
+      where: { ref: o.ref },
+      update: { userId: o.userId, status: o.status, totalAmount: FATIHA_PRICE, createdAt: new Date(o.createdAt) },
+      create: {
+        ref: o.ref,
+        userId: o.userId,
+        status: o.status,
+        totalAmount: FATIHA_PRICE,
+        createdAt: new Date(o.createdAt),
+        items: { create: [{ courseId: FATIHA_COURSE_ID, unitPrice: FATIHA_PRICE }] },
+      },
+    });
+    await prisma.orderItem.updateMany({
+      where: { orderId: order.id },
+      data: { courseId: FATIHA_COURSE_ID, unitPrice: FATIHA_PRICE },
+    });
+
+    await prisma.payment.deleteMany({ where: { orderId: order.id } });
+    if (o.status === 'PAID' || o.status === 'REFUNDED') {
+      await prisma.payment.create({
+        data: {
+          orderId: order.id,
+          transactionRef: `WAVE-${o.ref}`,
+          amount: FATIHA_PRICE,
+          status: o.status === 'PAID' ? 'SUCCESS' : 'REFUNDED',
+          paidAt: new Date(o.createdAt),
+        },
+      });
+    }
+
+    if (o.status === 'PAID') {
+      await prisma.enrollment.upsert({
+        where: { userId_courseId: { userId: o.userId, courseId: FATIHA_COURSE_ID } },
+        update: { orderId: order.id, status: 'ACTIVE' },
+        create: { userId: o.userId, courseId: FATIHA_COURSE_ID, orderId: order.id },
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Progression d'Aminata : vidéos 1 et 2 terminées, vidéo 3 en cours
+  // (reprise à 252 s).
+  // ---------------------------------------------------------------------
+  await prisma.enrollment.update({
+    where: { userId_courseId: { userId: 'u-aminata-diallo', courseId: FATIHA_COURSE_ID } },
+    data: { completedAt: null },
+  });
+  const progress = [
+    { lessonId: 'fatiha-v01', status: 'COMPLETED' as const, completedAt: new Date('2026-08-31T20:10:00') },
+    { lessonId: 'fatiha-v02', status: 'COMPLETED' as const, completedAt: new Date('2026-09-02T21:05:00') },
+    { lessonId: 'fatiha-v03', status: 'IN_PROGRESS' as const, lastPositionSeconds: 252 },
+  ];
+  for (const entry of progress) {
+    const { lessonId, ...data } = entry;
     await prisma.lessonProgress.upsert({
       where: { userId_lessonId: { userId: 'u-aminata-diallo', lessonId } },
-      update: {},
-      create: { userId: 'u-aminata-diallo', lessonId, status: 'COMPLETED', completedAt: new Date() },
+      update: data,
+      create: { userId: 'u-aminata-diallo', lessonId, ...data },
     });
   }
-  await prisma.lessonProgress.upsert({
-    where: { userId_lessonId: { userId: 'u-aminata-diallo', lessonId: 'l6' } },
-    update: {},
-    create: { userId: 'u-aminata-diallo', lessonId: 'l6', status: 'IN_PROGRESS', lastPositionSeconds: 252 },
-  });
-
-  // Récitation d'Aminata en attente de correction (module 1).
-  await prisma.recitation.create({
-    data: {
-      userId: 'u-aminata-diallo',
-      lessonId: 'l3',
-      audioUrl: 'https://placeholder.mouslihacademy.sn/recitations/aminata-module-1.m4a',
-      status: 'PENDING',
-      submittedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    },
-  });
 
   // ---------------------------------------------------------------------
-  // Questions de leçon sur l6 (fidèle à src/mocks/lesson-questions.ts)
+  // Questions de leçon sur la vidéo 2 (fidèle à src/mocks/lesson-questions.ts)
   // ---------------------------------------------------------------------
+  await prisma.lessonQuestion.deleteMany({
+    where: { lessonId: 'fatiha-v02', userId: { in: ['u-ibrahima-sarr', 'u-fatou-ndiaye'] } },
+  });
   await prisma.lessonQuestion.create({
     data: {
-      lessonId: 'l6',
+      lessonId: 'fatiha-v02',
       userId: 'u-ibrahima-sarr',
       question:
         "Quand je prononce le ع, j'ai l'impression de forcer et ma voix se casse au bout de trois répétitions. Est-ce normal au début ?",
       answer:
-        'C’est le signe que vous serrez la gorge. Reprenez à 06:40 : le son doit venir sans effort, comme un souffle retenu. Trois répétitions puis une pause suffisent la première semaine.',
+        'C’est le signe que vous serrez la gorge. Reprenez la démonstration lente : le son doit venir sans effort. Trois répétitions puis une pause suffisent les premiers jours.',
       answeredById: 'u-oustaz-mouslih',
       answeredAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     },
   });
   await prisma.lessonQuestion.create({
     data: {
-      lessonId: 'l6',
+      lessonId: 'fatiha-v02',
       userId: 'u-fatou-ndiaye',
-      question:
-        'Le PDF du tableau des gutturales ne s’ouvre pas sur mon téléphone. Une autre version est-elle possible ?',
+      question: 'À la fin du verset, sur الْعَالَمِينَ, faut-il toujours allonger six temps ?',
     },
   });
 

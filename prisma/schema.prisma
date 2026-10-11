@@ -283,11 +283,15 @@ model Lesson {
   position      Int
   status        ContentStatus @default(DRAFT)
   isFreePreview Boolean       @default(false)
+  /// Passage coranique travaillé dans la leçon, en arabe entièrement vocalisé (ex. « الْحَمْدُ »).
+  /// Non traduisible : le texte arabe est le même dans les trois langues de l'interface.
+  passage       String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   submodule        Submodule           @relation(fields: [submoduleId], references: [id], onDelete: Cascade)
   translations     LessonTranslation[]
+  mistakes          LessonMistake[]
   video             Video?
   resources         Resource[]
   lessonProgresses  LessonProgress[]
@@ -304,11 +308,52 @@ model LessonTranslation {
   locale      Locale
   title       String
   description String?
+  /// Objectif pédagogique de la leçon, affiché sous sa description.
+  objective   String?
+  /// Ce que l'apprenant saura faire, en points courts (liste à puces du programme et du lecteur).
+  keyPoints   String[] @default([])
 
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([lessonId, locale])
   @@map("lesson_translations")
+}
+
+/// Erreur de récitation corrigée dans une leçon (« Rectifiez votre Fâtiḥah » : 2 par vidéo,
+/// 10 au total). Source éditoriale : CONTENU-FATIHA.md côté frontend.
+model LessonMistake {
+  id        String   @id @default(uuid())
+  lessonId  String
+  position  Int
+  /// Mot ou passage concerné, en arabe vocalisé.
+  passage   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lesson       Lesson                     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  translations LessonMistakeTranslation[]
+
+  @@index([lessonId])
+  @@map("lesson_mistakes")
+}
+
+model LessonMistakeTranslation {
+  id         String @id @default(uuid())
+  mistakeId  String
+  locale     Locale
+  /// Libellé court, pour la grille « Les 10 erreurs » de la page formation.
+  title      String
+  /// Ce qu'on entend souvent.
+  mistake    String
+  /// Ce qu'il faut faire.
+  correction String
+  /// Règle de tajwīd concernée.
+  rule       String
+
+  lessonMistake LessonMistake @relation(fields: [mistakeId], references: [id], onDelete: Cascade)
+
+  @@unique([mistakeId, locale])
+  @@map("lesson_mistake_translations")
 }
 
 model Video {
