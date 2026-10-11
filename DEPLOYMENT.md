@@ -75,11 +75,29 @@ Sans l'une des deux, le catalogue de démo (couvertures fournies dans le dépôt
 continue de fonctionner normalement — seul un nouvel upload depuis l'éditeur admin serait
 perdu au prochain déploiement.
 
-## 3. Données de démonstration (optionnel)
+## 3. Données de démonstration (optionnel — jamais en production ouverte)
 
 Pour peupler la base Neon avec le catalogue de démo (formations, enseignant, témoignages) :
 lancer `DATABASE_URL="<chaîne Neon>" pnpm prisma:seed` depuis un poste ayant accès à la base
 (en local, ou via le Shell Render si disponible sur votre plan).
+
+## 3 bis. Contenu « Rectifiez votre Fâtiḥah » en production (recommandé)
+
+Met la base de production à jour avec la formation (10 150 F, textes FR/EN/AR, 5 vidéos,
+10 erreurs) et masque les autres formations, **sans créer aucune donnée de démo** (ni compte,
+ni commande, ni témoignage). Relançable sans risque ; préserve la couverture et les liens
+vidéo déjà saisis depuis l'admin. Supprime l'ancien programme de la formation (et la
+progression qui y était rattachée).
+
+```bash
+DATABASE_URL="<chaîne Neon directe>" pnpm prisma:sync-fatiha           # aperçu, n'écrit rien
+DATABASE_URL="<chaîne Neon directe>" pnpm prisma:sync-fatiha --apply   # applique
+```
+
+À lancer **après** le redéploiement Render (les migrations doivent être appliquées). Si
+l'aperçu signale le compte `admin@mouslihacademy.sn`, c'est qu'un seed de démo a déjà tourné
+sur cette base : changer son mot de passe (`password123`) ou le supprimer avant l'ouverture
+au public.
 
 ## 4. Après le déploiement du frontend
 

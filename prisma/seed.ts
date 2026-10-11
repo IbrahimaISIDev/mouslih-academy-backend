@@ -7,13 +7,7 @@ import 'dotenv/config';
 import bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
-import {
-  FATIHA_PLACEHOLDER_YOUTUBE_ID,
-  FATIHA_TOTAL_DURATION_SECONDS,
-  fatihaCourseText,
-  fatihaLessons,
-  fatihaModule,
-} from './fatiha-content.js';
+import { FATIHA_COURSE_ID, FATIHA_PRICE, syncFatihaCourse } from './fatiha-sync.js';
 
 const LOCALES = ['fr', 'en', 'ar'] as const;
 const toDbLocale = (locale: (typeof LOCALES)[number]) => locale.toUpperCase() as 'FR' | 'EN' | 'AR';
@@ -129,50 +123,10 @@ async function main() {
   });
 
   // ---------------------------------------------------------------------
-  // Catalogue — 6 formations. Seule « Rectification de la Fatiha » a un
-  // programme détaillé côté frontend ; les 5 autres restent sans modules
-  // (fidèle à src/mocks/courses.ts, qui les laisse à `modules: []`).
+  // Catalogue — les 5 formations masquées (brouillons, sans modules, fidèle à
+  // src/mocks/courses.ts). La formation publiée est gérée par syncFatihaCourse.
   // ---------------------------------------------------------------------
   const courses = [
-    {
-      id: 'c-rectification-fatiha',
-      slug: 'rectification-fatiha',
-      coverImageUrl: '/images/courses/rectification-fatiha.jpg',
-      price: 10150,
-      compareAtPrice: null,
-      level: 'BEGINNER' as const,
-      lessonCount: fatihaLessons.length,
-      totalDurationSeconds: FATIHA_TOTAL_DURATION_SECONDS,
-      status: 'PUBLISHED' as const,
-      isFeatured: true,
-      // Exercices, correction vocale et attestation : masqués tant que l'offre se limite aux
-      // 5 vidéos (décision du 2026-10-10).
-      hasCertificate: false,
-      hasVoiceCorrection: false,
-      translations: Object.fromEntries(
-        LOCALES.map((locale) => [
-          locale,
-          {
-            title: fatihaCourseText.title[locale],
-            subtitle: fatihaCourseText.subtitle[locale],
-            cardDescription: fatihaCourseText.cardDescription[locale],
-            heroTagline: fatihaCourseText.heroTagline[locale],
-            heroTaglineMobile: fatihaCourseText.heroTaglineMobile[locale],
-            description: fatihaCourseText.description[locale],
-          },
-        ]),
-      ) as Record<
-        (typeof LOCALES)[number],
-        {
-          title: string;
-          subtitle: string;
-          cardDescription: string;
-          heroTagline: string | null;
-          heroTaglineMobile: string | null;
-          description: string;
-        }
-      >,
-    },
     {
       id: 'c-initiation-nourania',
       slug: 'initiation-nourania',
@@ -427,101 +381,10 @@ async function main() {
 
 
   // ---------------------------------------------------------------------
-  // Programme de « Rectifiez votre Fâtiḥah » : 1 module, 5 vidéos, 2 erreurs
-  // corrigées par vidéo (prisma/fatiha-content.ts, fidèle à CONTENU-FATIHA.md).
-  // Les vidéos pointent vers une vidéo YouTube provisoire, à remplacer depuis
-  // l'éditeur admin quand les vraies vidéos seront prêtes.
+  // « Rectifiez votre Fâtiḥah » : formation, programme, erreurs corrigées —
+  // même code que la mise à jour de production (prisma/fatiha-sync.ts).
   // ---------------------------------------------------------------------
-  const FATIHA_COURSE_ID = 'c-rectification-fatiha';
-
-  // Retire l'ancien programme (4 modules, 11 leçons) — la cascade emporte leçons, vidéos,
-  // progression, questions et récitations rattachées.
-  await prisma.module.deleteMany({ where: { courseId: FATIHA_COURSE_ID, id: { not: fatihaModule.id } } });
-
-  await prisma.module.upsert({
-    where: { id: fatihaModule.id },
-    update: { position: 1, status: 'PUBLISHED' },
-    create: { id: fatihaModule.id, courseId: FATIHA_COURSE_ID, position: 1, status: 'PUBLISHED' },
-  });
-  for (const locale of LOCALES) {
-    await prisma.moduleTranslation.upsert({
-      where: { moduleId_locale: { moduleId: fatihaModule.id, locale: toDbLocale(locale) } },
-      update: { title: fatihaModule.title[locale] },
-      create: { moduleId: fatihaModule.id, locale: toDbLocale(locale), title: fatihaModule.title[locale] },
-    });
-  }
-
-  await prisma.submodule.upsert({
-    where: { id: fatihaModule.subModuleId },
-    update: { position: 1, status: 'PUBLISHED' },
-    create: { id: fatihaModule.subModuleId, moduleId: fatihaModule.id, position: 1, status: 'PUBLISHED' },
-  });
-  await prisma.lesson.deleteMany({
-    where: { submoduleId: fatihaModule.subModuleId, id: { notIn: fatihaLessons.map((l) => l.id) } },
-  });
-
-  for (const [index, lesson] of fatihaLessons.entries()) {
-    const lessonFields = {
-      slug: lesson.slug,
-      position: index + 1,
-      status: 'PUBLISHED' as const,
-      isFreePreview: lesson.isFreePreview,
-      passage: lesson.passage,
-    };
-    await prisma.lesson.upsert({
-      where: { id: lesson.id },
-      update: lessonFields,
-      create: { id: lesson.id, submoduleId: fatihaModule.subModuleId, ...lessonFields },
-    });
-
-    for (const locale of LOCALES) {
-      const fields = {
-        title: lesson.title[locale],
-        description: lesson.description[locale],
-        objective: lesson.objective[locale],
-        keyPoints: lesson.keyPoints.map((point) => point[locale]),
-      };
-      await prisma.lessonTranslation.upsert({
-        where: { lessonId_locale: { lessonId: lesson.id, locale: toDbLocale(locale) } },
-        update: fields,
-        create: { lessonId: lesson.id, locale: toDbLocale(locale), ...fields },
-      });
-    }
-
-    // Vidéo provisoire : on ne l'impose qu'à la création, pour ne jamais écraser un vrai lien
-    // déjà saisi depuis l'admin en relançant le seed.
-    await prisma.video.upsert({
-      where: { lessonId: lesson.id },
-      update: {},
-      create: {
-        lessonId: lesson.id,
-        provider: 'YOUTUBE',
-        externalId: FATIHA_PLACEHOLDER_YOUTUBE_ID,
-        durationSeconds: lesson.durationSeconds,
-        status: 'READY',
-      },
-    });
-
-    await prisma.lessonMistake.deleteMany({ where: { lessonId: lesson.id } });
-    for (const [position, mistake] of lesson.mistakes.entries()) {
-      await prisma.lessonMistake.create({
-        data: {
-          lessonId: lesson.id,
-          position: position + 1,
-          passage: mistake.passage,
-          translations: {
-            create: LOCALES.map((locale) => ({
-              locale: toDbLocale(locale),
-              title: mistake.title[locale],
-              mistake: mistake.mistake[locale],
-              correction: mistake.correction[locale],
-              rule: mistake.rule[locale],
-            })),
-          },
-        },
-      });
-    }
-  }
+  await syncFatihaCourse(prisma);
 
   // ---------------------------------------------------------------------
   // Témoignages — FICTIFS, données de démonstration uniquement : à remplacer
@@ -630,7 +493,6 @@ async function main() {
   // Commandes (fidèle à src/mocks/orders.ts) — toutes sur la seule formation
   // visible, au prix de 10 150 F.
   // ---------------------------------------------------------------------
-  const FATIHA_PRICE = 10150;
   const orders = [
     { ref: 'TX-8842301', userId: 'u-aminata-diallo', status: 'PAID' as const, createdAt: '2026-08-30T18:22:00' },
     { ref: 'TX-8901276', userId: 'u-aminata-diallo', status: 'FAILED' as const, createdAt: '2026-08-30T18:09:00' },
