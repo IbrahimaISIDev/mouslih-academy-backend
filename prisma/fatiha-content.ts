@@ -3,9 +3,10 @@
  * Généré depuis la source éditoriale unique CONTENU-FATIHA.md — ne pas modifier à la main sans
  * reporter la modification dans le dépôt jumeau (mock frontend ↔ seed backend).
  */
+/** Ancienne vidéo provisoire unique : remplacée par la vidéo de chaque leçon quand elle est encore en place. */
 export const FATIHA_PLACEHOLDER_YOUTUBE_ID = 'ku1romHwGCM';
 
-export const FATIHA_TOTAL_DURATION_SECONDS = 3350;
+export const FATIHA_TOTAL_DURATION_SECONDS = 2275;
 
 export const fatihaCourseText = {
   title: {
@@ -54,7 +55,8 @@ export const fatihaLessons = [
   {
     id: 'fatiha-v01',
     slug: 'corriger-al-hamdu',
-    durationSeconds: 570,
+    durationSeconds: 385,
+    youtubeId: '7023DoO7TL4',
     isFreePreview: true,
     passage: 'الْحَمْدُ',
     title: {
@@ -136,8 +138,9 @@ export const fatihaLessons = [
   {
     id: 'fatiha-v02',
     slug: 'al-alamin-et-iyyaka',
-    durationSeconds: 675,
-    isFreePreview: false,
+    durationSeconds: 264,
+    youtubeId: 'GSCyCtWtj1c',
+    isFreePreview: true,
     passage: 'الْعَالَمِينَ — إِيَّاكَ',
     title: {
       fr: 'Maîtriser « Al-ʿālamīn » et « Iyyāka »',
@@ -223,8 +226,9 @@ export const fatihaLessons = [
   {
     id: 'fatiha-v03',
     slug: 'ihdina-s-sirat',
-    durationSeconds: 620,
-    isFreePreview: false,
+    durationSeconds: 462,
+    youtubeId: 'dDdqkQ3TAYk',
+    isFreePreview: true,
     passage: 'اهْدِنَا الصِّرَاطَ',
     title: {
       fr: 'Bien prononcer « Ihdinā ṣ-ṣirāṭ »',
@@ -310,8 +314,9 @@ export const fatihaLessons = [
   {
     id: 'fatiha-v04',
     slug: 'alladhina-et-maghdubi',
-    durationSeconds: 725,
-    isFreePreview: false,
+    durationSeconds: 547,
+    youtubeId: 'lquZH_0Fsnk',
+    isFreePreview: true,
     passage: 'الَّذِينَ — الْمَغْضُوبِ',
     title: {
       fr: 'Corriger « Alladhīna » et « Al-maghḍūbi »',
@@ -392,8 +397,9 @@ export const fatihaLessons = [
   {
     id: 'fatiha-v05',
     slug: 'wa-la-d-dallin',
-    durationSeconds: 760,
-    isFreePreview: false,
+    durationSeconds: 617,
+    youtubeId: 'zTHNmEi30Ys',
+    isFreePreview: true,
     passage: 'وَلَا الضَّالِّينَ',
     title: {
       fr: "Maîtriser la fin d'Al-Fâtiḥah",

@@ -23,7 +23,8 @@ export const FATIHA_PRICE = 10150;
 /**
  * Formation + traductions + programme complet. Idempotent : relançable sans risque.
  * Préserve ce qui se gère depuis l'admin : image de couverture déjà choisie, et vidéo déjà
- * rattachée à une leçon (la vidéo YouTube provisoire n'est posée que sur une leçon sans vidéo).
+ * rattachée à une leçon (la vidéo d'exemple ne remplace qu'une absence de vidéo ou l'ancienne
+ * vidéo provisoire unique).
  */
 export async function syncFatihaCourse(prisma: PrismaClient): Promise<void> {
   const courseFields = {
@@ -159,19 +160,26 @@ export async function syncFatihaCourse(prisma: PrismaClient): Promise<void> {
       });
     }
 
-    // Vidéo provisoire : on ne l'impose qu'à la création, pour ne jamais écraser un vrai lien
-    // déjà saisi depuis l'admin en relançant le seed.
-    await prisma.video.upsert({
+    // Vidéo d'exemple de la leçon : posée si la leçon n'a pas de vidéo, ou si elle a encore
+    // l'ancienne vidéo provisoire unique. Un lien saisi depuis l'admin n'est jamais écrasé.
+    const video = {
+      provider: 'YOUTUBE' as const,
+      externalId: lesson.youtubeId,
+      durationSeconds: lesson.durationSeconds,
+      status: 'READY' as const,
+    };
+    const current = await prisma.video.findUnique({
       where: { lessonId: lesson.id },
-      update: {},
-      create: {
-        lessonId: lesson.id,
-        provider: 'YOUTUBE',
-        externalId: FATIHA_PLACEHOLDER_YOUTUBE_ID,
-        durationSeconds: lesson.durationSeconds,
-        status: 'READY',
-      },
+      select: { externalId: true },
     });
+    if (!current) {
+      await prisma.video.create({ data: { lessonId: lesson.id, ...video } });
+    } else if (current.externalId === FATIHA_PLACEHOLDER_YOUTUBE_ID) {
+      await prisma.video.update({
+        where: { lessonId: lesson.id },
+        data: video,
+      });
+    }
 
     await prisma.lessonMistake.deleteMany({ where: { lessonId: lesson.id } });
     for (const [position, mistake] of lesson.mistakes.entries()) {
