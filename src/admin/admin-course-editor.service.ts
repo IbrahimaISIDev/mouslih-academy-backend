@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { COURSE_DETAIL_INCLUDE } from '../catalog/mappers/course-detail.include.js';
 import { mapCourse } from '../catalog/mappers/course.mapper.js';
 import { levelFromFrontend } from '../catalog/mappers/enums.js';
+import { CloudinaryService } from '../media/cloudinary.service.js';
+import { LessonPlaybackService } from '../media/lesson-playback.service.js';
 import { parseYouTubeVideoId } from '../media/youtube.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { ReorderCourseDto } from './dto/reorder-course.dto.js';
@@ -25,7 +27,65 @@ function slugify(text: string): string {
 
 @Injectable()
 export class AdminCourseEditorService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+    private readonly playback: LessonPlaybackService,
+  ) {}
+
+  private async assertLesson(courseId: string, moduleId: string, subModuleId: string, lessonId: string) {
+    const lesson = await this.prisma.lesson.findFirst({
+      where: { id: lessonId, submoduleId: subModuleId, submodule: { moduleId, module: { courseId } } },
+      select: { id: true, video: { select: { provider: true, externalId: true } } },
+    });
+    if (!lesson) {
+      throw new NotFoundException('Leçon introuvable pour cette formation');
+    }
+    return lesson;
+  }
+
+  /** Paramètres signés pour envoyer une vidéo directement du navigateur vers Cloudinary. */
+  async signVideoUpload(courseId: string, moduleId: string, subModuleId: string, lessonId: string) {
+    await this.assertLesson(courseId, moduleId, subModuleId, lessonId);
+    return this.cloudinary.signLessonUpload(lessonId);
+  }
+
+  /**
+   * Fin d'envoi annoncée par l'admin : on ne croit pas le client sur parole — la vidéo doit
+   * exister chez Cloudinary sous un public_id propre à cette leçon. Durée lue chez Cloudinary.
+   */
+  async completeVideoUpload(
+    courseId: string,
+    moduleId: string,
+    subModuleId: string,
+    lessonId: string,
+    publicId: string,
+  ) {
+    const lesson = await this.assertLesson(courseId, moduleId, subModuleId, lessonId);
+    if (!publicId.startsWith(this.cloudinary.lessonPublicIdPrefix(lessonId))) {
+      throw new BadRequestException('Cette vidéo ne correspond pas à cette leçon.');
+    }
+    const info = await this.cloudinary.getVideoInfo(publicId);
+    if (!info) {
+      throw new BadRequestException('Vidéo introuvable chez Cloudinary : l’envoi n’est peut-être pas terminé.');
+    }
+
+    const data = {
+      provider: 'CLOUDINARY' as const,
+      externalId: publicId,
+      durationSeconds: info.durationSeconds,
+      status: info.ready ? ('READY' as const) : ('PROCESSING' as const),
+    };
+    await this.prisma.video.upsert({ where: { lessonId }, create: { lessonId, ...data }, update: data });
+
+    const previous = lesson.video;
+    if (previous?.provider === 'CLOUDINARY' && previous.externalId !== publicId) {
+      await this.cloudinary.deleteVideo(previous.externalId);
+    }
+
+    await this.refreshCourseTotals(courseId);
+    return this.getCourseEditor(courseId);
+  }
 
   async list() {
     const courses = await this.prisma.course.findMany({
@@ -219,13 +279,10 @@ export class AdminCourseEditorService {
     lessonId: string,
     dto: UpdateLessonDto,
   ) {
-    const lesson = await this.prisma.lesson.findFirst({
-      where: { id: lessonId, submoduleId: subModuleId, submodule: { moduleId, module: { courseId } } },
-      select: { id: true },
-    });
-    if (!lesson) {
-      throw new NotFoundException('Leçon introuvable pour cette formation');
-    }
+    const lesson = await this.assertLesson(courseId, moduleId, subModuleId, lessonId);
+    // Vidéo Cloudinary remplacée par un lien YouTube (ou retirée) : on libère son stockage.
+    const replacedCloudinaryId =
+      dto.youtubeUrl !== undefined && lesson.video?.provider === 'CLOUDINARY' ? lesson.video.externalId : null;
 
     if (dto.title !== undefined) {
       await this.prisma.lessonTranslation.upsert({
@@ -261,6 +318,10 @@ export class AdminCourseEditorService {
       });
     } else if (dto.durationSeconds !== undefined) {
       await this.prisma.video.updateMany({ where: { lessonId }, data: { durationSeconds: dto.durationSeconds } });
+    }
+
+    if (replacedCloudinaryId) {
+      await this.cloudinary.deleteVideo(replacedCloudinaryId);
     }
 
     await this.refreshCourseTotals(courseId);
@@ -317,6 +378,17 @@ export class AdminCourseEditorService {
   }
 
   async getCourseEditor(courseId: string) {
+    // Vidéos Cloudinary en préparation : revérifiées à chaque ouverture de l'éditeur (pas de
+    // webhook nécessaire) ; la durée définitive est reportée sur les totaux de la formation.
+    const processing = await this.prisma.video.findMany({
+      where: { provider: 'CLOUDINARY', status: 'PROCESSING', lesson: { submodule: { module: { courseId } } } },
+      select: { id: true, provider: true, externalId: true, status: true },
+    });
+    if (processing.length > 0) {
+      const statuses = await Promise.all(processing.map((v) => this.playback.refreshCloudinaryStatus(v)));
+      if (statuses.includes('READY')) await this.refreshCourseTotals(courseId);
+    }
+
     // Contrairement au catalogue public, l'admin doit pouvoir voir/éditer une formation en
     // brouillon (pas de filtre status: PUBLISHED ici).
     const course = await this.prisma.course.findUnique({
@@ -330,18 +402,29 @@ export class AdminCourseEditorService {
     const lessons = course.modules.flatMap((m) => m.submodules.flatMap((sm) => sm.lessons));
     const videoStatus: Record<
       string,
-      { status: 'ready' | 'uploading' | 'missing'; uploadPct?: number; youtubeId?: string }
+      {
+        status: 'ready' | 'processing' | 'uploading' | 'missing';
+        uploadPct?: number;
+        provider?: 'youtube' | 'cloudinary' | 'stream';
+        youtubeId?: string;
+      }
     > = {};
     for (const lesson of lessons) {
       videoStatus[lesson.id] = {
         status: lessonVideoStatus(lesson.video),
+        ...(lesson.video ? { provider: providerToFrontend(lesson.video.provider) } : {}),
         // Réservé à l'éditeur admin : le catalogue public ne divulgue jamais l'identifiant
         // d'une vidéo payante (voir publicVideoUrl).
         ...(lesson.video?.provider === 'YOUTUBE' ? { youtubeId: lesson.video.externalId } : {}),
       };
     }
 
-    return { course: mapCourse(course), videoStatus };
+    return {
+      course: mapCourse(course),
+      videoStatus,
+      // Le bouton « Envoyer une vidéo » n'apparaît que si Cloudinary est configuré sur le serveur.
+      mediaUpload: { cloudinary: this.cloudinary.isConfigured },
+    };
   }
 
   async reorder(courseId: string, dto: ReorderCourseDto): Promise<void> {
@@ -378,9 +461,15 @@ export class AdminCourseEditorService {
   }
 }
 
-function lessonVideoStatus(video: { status: string } | null): 'ready' | 'uploading' | 'missing' {
+function lessonVideoStatus(video: { status: string } | null): 'ready' | 'processing' | 'missing' {
   if (!video) return 'missing';
   if (video.status === 'READY') return 'ready';
-  if (video.status === 'PROCESSING') return 'uploading';
+  if (video.status === 'PROCESSING') return 'processing';
   return 'missing';
+}
+
+function providerToFrontend(provider: string): 'youtube' | 'cloudinary' | 'stream' {
+  if (provider === 'YOUTUBE') return 'youtube';
+  if (provider === 'CLOUDINARY') return 'cloudinary';
+  return 'stream';
 }

@@ -75,6 +75,37 @@ Sans l'une des deux, le catalogue de démo (couvertures fournies dans le dépôt
 continue de fonctionner normalement — seul un nouvel upload depuis l'éditeur admin serait
 perdu au prochain déploiement.
 
+## 2 bis. Vidéos de leçon — Cloudinary
+
+Les vidéos s'envoient depuis l'éditeur de formation (icône ▶ d'une leçon → « Envoyer un
+fichier ») : le navigateur envoie le fichier **directement** à Cloudinary, par morceaux de 20 Mo
+(reprise automatique en cas de coupure), avec une signature délivrée par l'API. Le secret ne
+quitte jamais le serveur. Les vidéos sont stockées en type « authenticated » : lisibles
+uniquement via une URL signée émise par l'API (inscrits, ou tout le monde pour une vidéo en
+accès libre). Durée lue automatiquement chez Cloudinary.
+
+1. Tableau de bord Cloudinary → **Settings → API Keys** : relever *Cloud name*, *API Key*,
+   *API Secret*.
+2. Render → service backend → **Environment** : ajouter
+
+| Variable | Valeur |
+|---|---|
+| `CLOUDINARY_CLOUD_NAME` | cloud name |
+| `CLOUDINARY_API_KEY` | API key |
+| `CLOUDINARY_API_SECRET` | API secret (jamais côté frontend, jamais dans Git) |
+| `CLOUDINARY_FOLDER` | facultatif, défaut `mouslih-academy` |
+
+3. En local : mêmes variables dans `.env`, puis `pnpm cloudinary:check` (teste la connexion,
+   affiche l'offre et la taille maximale d'une vidéo, sans afficher le secret).
+
+Sans ces variables, l'admin ne propose que les liens YouTube : rien ne casse.
+
+**À savoir** : après l'envoi, Cloudinary prépare la vidéo (rendu MP4 ≤ 1280 px et image
+d'aperçu) en quelques minutes ; l'éditeur affiche « En préparation » et se met à jour seul.
+Sur les offres standard, une URL signée n'expire pas (un inscrit pourrait la partager) ;
+l'expiration demande l'option « token-based authentication » des offres avancées. Remplacer
+ou passer une leçon sur YouTube supprime l'ancienne vidéo chez Cloudinary.
+
 ## 3. Données de démonstration (optionnel — jamais en production ouverte)
 
 Pour peupler la base Neon avec le catalogue de démo (formations, enseignant, témoignages) :

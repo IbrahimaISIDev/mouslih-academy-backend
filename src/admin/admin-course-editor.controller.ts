@@ -28,6 +28,7 @@ import { ReorderCourseDto } from './dto/reorder-course.dto.js';
 import { UpdateCourseDto } from './dto/update-course.dto.js';
 import { UpdateModuleDto } from './dto/update-module.dto.js';
 import { UpdateLessonDto } from './dto/update-lesson.dto.js';
+import { CompleteVideoUploadDto } from './dto/complete-video-upload.dto.js';
 
 // UPLOADS_DIR est configurable car le système de fichiers de la plupart des hébergeurs (Render
 // notamment) est éphémère : sans disque persistant attaché et pointé ici via cette variable, les
@@ -113,6 +114,29 @@ export class AdminCourseEditorController {
     @Body() dto: UpdateLessonDto,
   ) {
     return this.adminCourseEditorService.updateLesson(id, moduleId, subModuleId, lessonId, dto);
+  }
+
+  /** Paramètres signés d'envoi direct navigateur → Cloudinary pour la vidéo de cette leçon. */
+  @Post(':id/modules/:moduleId/submodules/:subModuleId/lessons/:lessonId/video-upload')
+  signVideoUpload(
+    @Param('id') id: string,
+    @Param('moduleId') moduleId: string,
+    @Param('subModuleId') subModuleId: string,
+    @Param('lessonId') lessonId: string,
+  ) {
+    return this.adminCourseEditorService.signVideoUpload(id, moduleId, subModuleId, lessonId);
+  }
+
+  /** Fin d'envoi : vérifie la vidéo chez Cloudinary et la rattache à la leçon. */
+  @Post(':id/modules/:moduleId/submodules/:subModuleId/lessons/:lessonId/video-upload/complete')
+  completeVideoUpload(
+    @Param('id') id: string,
+    @Param('moduleId') moduleId: string,
+    @Param('subModuleId') subModuleId: string,
+    @Param('lessonId') lessonId: string,
+    @Body() dto: CompleteVideoUploadDto,
+  ) {
+    return this.adminCourseEditorService.completeVideoUpload(id, moduleId, subModuleId, lessonId, dto.publicId);
   }
 
   @Delete(':id/modules/:moduleId/submodules/:subModuleId/lessons/:lessonId')

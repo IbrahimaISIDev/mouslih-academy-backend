@@ -1,20 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CloudflareStreamService } from '../media/cloudflare-stream.service.js';
+import { LessonPlaybackService, type LessonPlayback } from '../media/lesson-playback.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { mapEnrollment } from './mappers/enrollment.mapper.js';
-
-/** Ce dont le lecteur de leçon a besoin pour jouer la vidéo. `provider: null` : pas encore de
- *  vidéo exploitable (non envoyée, ou lecture signée Stream non configurée). */
-export type LessonPlayback =
-  | { provider: 'youtube'; videoId: string }
-  | { provider: 'stream'; url: string }
-  | { provider: null };
 
 @Injectable()
 export class EnrollmentsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly stream: CloudflareStreamService,
+    private readonly playback: LessonPlaybackService,
   ) {}
 
   async listForUser(userId: string) {
@@ -120,16 +113,7 @@ export class EnrollmentsService {
       await this.assertOwnership(userId, lessonId);
     }
 
-    const video = lesson.video;
-    if (!video || video.status !== 'READY') return { provider: null };
-
-    if (video.provider === 'YOUTUBE') {
-      return { provider: 'youtube', videoId: video.externalId };
-    }
-    if (this.stream.canSignPlaybackUrls) {
-      return { provider: 'stream', url: this.stream.getSignedPlaybackUrl(video.externalId) };
-    }
-    return { provider: null };
+    return this.playback.resolve(lesson.video);
   }
 
   /** Une leçon n'est accessible en progression que si son cours fait partie d'un enrollment actif. */

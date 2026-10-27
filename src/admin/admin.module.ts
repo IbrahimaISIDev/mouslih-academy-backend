@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
+import { MediaModule } from '../media/media.module.js';
 import { AdminCourseEditorController } from './admin-course-editor.controller.js';
 import { AdminCourseEditorService } from './admin-course-editor.service.js';
 import { AdminDashboardController } from './admin-dashboard.controller.js';
 import { AdminDashboardService } from './admin-dashboard.service.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, MediaModule],
   controllers: [AdminDashboardController, AdminCourseEditorController],
   providers: [AdminDashboardService, AdminCourseEditorService],
 })

@@ -63,6 +63,9 @@ enum CourseLevel {
 enum VideoProvider {
   YOUTUBE
   CLOUDFLARE_STREAM
+  /// Vidéo envoyée depuis l'admin vers Cloudinary (type « authenticated » : lisible uniquement
+  /// via une URL signée par le backend). externalId = public_id Cloudinary.
+  CLOUDINARY
 }
 
 enum VideoStatus {
