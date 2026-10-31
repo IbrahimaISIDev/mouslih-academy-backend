@@ -54,6 +54,17 @@ const COPY: Record<
   },
 };
 
+/** Sujet, HTML et texte de l'e-mail d'accès — exporté pour l'e-mail d'essai de `pnpm email:check`. */
+export function renderCourseAccessEmail(params: CourseAccessEmailParams) {
+  const copy = COPY[params.locale] ?? COPY.FR;
+  const courseUrl = `${FRONTEND_URL}/${params.locale.toLowerCase()}/tableau-de-bord`;
+  return {
+    subject: copy.subject(params.courseName),
+    html: copy.html(params, courseUrl),
+    text: copy.text(params, courseUrl),
+  };
+}
+
 /**
  * L'envoi ne doit jamais faire échouer la confirmation de paiement elle-même : la commande est
  * déjà marquée payée et l'inscription déjà active au moment où ce service est appelé (voir
@@ -88,9 +99,7 @@ export class EmailService {
   }
 
   async sendCourseAccessEmail(params: CourseAccessEmailParams): Promise<void> {
-    const copy = COPY[params.locale] ?? COPY.FR;
-    const courseUrl = `${FRONTEND_URL}/${params.locale.toLowerCase()}/tableau-de-bord`;
-    const subject = copy.subject(params.courseName);
+    const { subject, html, text } = renderCourseAccessEmail(params);
 
     if (!this.transporter) {
       this.logger.warn(
@@ -104,8 +113,8 @@ export class EmailService {
         from: this.from,
         to: params.to,
         subject,
-        html: copy.html(params, courseUrl),
-        text: copy.text(params, courseUrl),
+        html,
+        text,
       });
     } catch (error) {
       // Volontairement avalé : voir la note de classe ci-dessus.

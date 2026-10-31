@@ -106,6 +106,25 @@ Sur les offres standard, une URL signée n'expire pas (un inscrit pourrait la pa
 l'expiration demande l'option « token-based authentication » des offres avancées. Remplacer
 ou passer une leçon sur YouTube supprime l'ancienne vidéo chez Cloudinary.
 
+## 2 ter. E-mails — SMTP
+
+Le site envoie l'e-mail « Votre accès est prêt » (FR/EN/AR) après chaque paiement confirmé.
+N'importe quel fournisseur SMTP convient. Render → service backend → **Environment** :
+
+| Variable | Exemple |
+|---|---|
+| `SMTP_HOST` | `smtp-relay.brevo.com` · `smtp.gmail.com` · `smtp.resend.com` |
+| `SMTP_PORT` | `587` (STARTTLS) ou `465` (SSL) |
+| `SMTP_USER` | identifiant SMTP du fournisseur |
+| `SMTP_PASSWORD` | mot de passe / clé SMTP (Gmail : « mot de passe d'application ») |
+| `SMTP_FROM` | `Mouslih Academy <contact@votre-domaine>` — adresse validée chez le fournisseur |
+| `FRONTEND_URL` | `https://mouslih-academy.vercel.app` (lien des e-mails et retours Wave) |
+
+En local : mêmes variables dans `.env`, puis `pnpm email:check` (connexion) et
+`pnpm email:check --to=vous@exemple.com` (envoie le vrai e-mail d'accès en essai). Sans ces
+variables, l'API journalise l'e-mail au lieu de l'envoyer : rien ne casse. Un échec d'envoi
+n'annule jamais la confirmation d'un paiement.
+
 ## 3. Données de démonstration (optionnel — jamais en production ouverte)
 
 Pour peupler la base Neon avec le catalogue de démo (formations, enseignant, témoignages) :
