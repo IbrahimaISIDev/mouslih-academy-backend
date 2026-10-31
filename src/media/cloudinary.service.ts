@@ -1,12 +1,23 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
 
 /** Rendu MP4 servi aux apprenants (≤ 1280 px de large, qualité auto) et image d'aperçu. Préparés
  *  à l'envoi (« eager », en tâche de fond) : Cloudinary refuse de transcoder à la volée une vidéo
  *  volumineuse, et ce sont exactement ces transformations que les URLs signées demandent. */
-const PLAYBACK_TRANSFORMATION = { crop: 'limit', width: 1280, quality: 'auto:good' };
+const PLAYBACK_TRANSFORMATION = {
+  crop: 'limit',
+  width: 1280,
+  quality: 'auto:good',
+};
 const POSTER_TRANSFORMATION = { crop: 'limit', width: 1280, start_offset: '2' };
-const EAGER: { transformation: Record<string, string | number>; format: string }[] = [
+const EAGER: {
+  transformation: Record<string, string | number>;
+  format: string;
+}[] = [
   { transformation: PLAYBACK_TRANSFORMATION, format: 'mp4' },
   { transformation: POSTER_TRANSFORMATION, format: 'jpg' },
 ];
@@ -50,7 +61,8 @@ export class CloudinaryService {
   private readonly cloudName = process.env['CLOUDINARY_CLOUD_NAME'];
   private readonly apiKey = process.env['CLOUDINARY_API_KEY'];
   private readonly apiSecret = process.env['CLOUDINARY_API_SECRET'];
-  private readonly folder = process.env['CLOUDINARY_FOLDER'] || 'mouslih-academy';
+  private readonly folder =
+    process.env['CLOUDINARY_FOLDER'] || 'mouslih-academy';
 
   constructor() {
     if (this.isConfigured) {
@@ -96,7 +108,10 @@ export class CloudinaryService {
       eager: eagerString(),
       eager_async: 'true',
     };
-    const signature = cloudinary.utils.api_sign_request({ ...fields, timestamp }, this.apiSecret!);
+    const signature = cloudinary.utils.api_sign_request(
+      { ...fields, timestamp },
+      this.apiSecret!,
+    );
 
     return {
       uploadUrl: `https://api.cloudinary.com/v1_1/${this.cloudName}/video/upload`,
@@ -116,14 +131,22 @@ export class CloudinaryService {
       const resource = (await cloudinary.api.resource(publicId, {
         resource_type: 'video',
         type: 'authenticated',
+        // Sans cette option, l'API d'administration ne renvoie pas la durée de la vidéo.
+        media_metadata: true,
       })) as { duration?: number; derived?: { transformation?: string }[] };
-      const playback = cloudinary.utils.generate_transformation_string({ ...PLAYBACK_TRANSFORMATION });
+      const playback = cloudinary.utils.generate_transformation_string({
+        ...PLAYBACK_TRANSFORMATION,
+      });
       return {
         durationSeconds: Math.round(resource.duration ?? 0),
-        ready: (resource.derived ?? []).some((d) => d.transformation?.startsWith(playback)),
+        ready: (resource.derived ?? []).some((d) =>
+          d.transformation?.startsWith(playback),
+        ),
       };
     } catch (error) {
-      this.logger.warn(`Ressource Cloudinary introuvable ou inaccessible : ${publicId} (${String(error)})`);
+      this.logger.warn(
+        `Ressource Cloudinary introuvable ou inaccessible : ${publicId} (${String(error)})`,
+      );
       return null;
     }
   }
@@ -131,10 +154,22 @@ export class CloudinaryService {
   /** URLs signées de lecture (MP4) et d'aperçu (JPG). À n'émettre qu'après vérification d'accès. */
   signedPlayback(publicId: string): { url: string; posterUrl: string } {
     this.assertConfigured();
-    const base = { resource_type: 'video', type: 'authenticated', sign_url: true } as const;
+    const base = {
+      resource_type: 'video',
+      type: 'authenticated',
+      sign_url: true,
+    } as const;
     return {
-      url: cloudinary.url(publicId, { ...base, format: 'mp4', transformation: [PLAYBACK_TRANSFORMATION] }),
-      posterUrl: cloudinary.url(publicId, { ...base, format: 'jpg', transformation: [POSTER_TRANSFORMATION] }),
+      url: cloudinary.url(publicId, {
+        ...base,
+        format: 'mp4',
+        transformation: [PLAYBACK_TRANSFORMATION],
+      }),
+      posterUrl: cloudinary.url(publicId, {
+        ...base,
+        format: 'jpg',
+        transformation: [POSTER_TRANSFORMATION],
+      }),
     };
   }
 
@@ -142,9 +177,15 @@ export class CloudinaryService {
   async deleteVideo(publicId: string): Promise<void> {
     if (!this.isConfigured) return;
     try {
-      await cloudinary.uploader.destroy(publicId, { resource_type: 'video', type: 'authenticated', invalidate: true });
+      await cloudinary.uploader.destroy(publicId, {
+        resource_type: 'video',
+        type: 'authenticated',
+        invalidate: true,
+      });
     } catch (error) {
-      this.logger.warn(`Suppression Cloudinary échouée pour ${publicId} : ${String(error)}`);
+      this.logger.warn(
+        `Suppression Cloudinary échouée pour ${publicId} : ${String(error)}`,
+      );
     }
   }
 }
